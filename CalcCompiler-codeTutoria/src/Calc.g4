@@ -2,7 +2,7 @@ grammar Calc;
 
 prog   : stat+ EOF;
 
-stat   : 'escreve' expr COMMA NEWLINE;
+stat   : 'escreve' expr SCOMMA NEWLINE;
 
 expr   : LPAREN expr RPAREN             # Parens
        | (UMINUS|NOT) expr              # Unary
@@ -38,7 +38,7 @@ INT      : DIGIT+ ;
 REAL     : DIGIT+ '.' DIGIT+ ;
 STRING   : '"' .*? '"' ;
 BOOL     : 'verdadeiro' | 'falso' ;
-COMMA   : ';' ;
+SCOMMA   : ';' ;
 NEWLINE  : '\r'? '\n' ;
 WS       : [ \t\r\n]+ -> skip ;
 
