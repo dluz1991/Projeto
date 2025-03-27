@@ -5,7 +5,6 @@ prog   : stat+ EOF;
 stat   : 'print' expr NEWLINE;
 
 expr   : '-' expr                          # Uminus
-       |<assoc=right>expr op='^' expr                  # Exp
        | expr op=('*'|'/') expr            # MulDiv
        | expr op=('+'|'-') expr            # AddSub
        | INT                               # Int
