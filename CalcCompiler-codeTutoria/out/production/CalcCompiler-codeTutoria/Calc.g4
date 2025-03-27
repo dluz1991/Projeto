@@ -4,13 +4,6 @@ prog   : stat+ EOF;
 
 stat   : 'escreve' expr COMMA NEWLINE;
 
-<<<<<<< Updated upstream
-expr   : '-' expr                          # Uminus
-       | expr op=('*'|'/') expr            # MulDiv
-       | expr op=('+'|'-') expr            # AddSub
-       | INT                               # Int
-       | '(' expr ')'                      # Parens
-=======
 expr   : LPAREN expr RPAREN
        | (UMINUS|NOT) expr
        | expr (MULT|DIV|REMAINDER) expr
@@ -22,7 +15,6 @@ expr   : LPAREN expr RPAREN
        | REAL
        | STRING
        | BOOLEAN
->>>>>>> Stashed changes
        ;
 
 LPAREN : '(' ;
