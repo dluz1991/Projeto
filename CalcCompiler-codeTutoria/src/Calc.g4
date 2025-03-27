@@ -4,6 +4,7 @@ prog   : stat+ EOF;
 
 stat   : 'escreve' expr SCOMMA NEWLINE;
 
+
 expr   : LPAREN expr RPAREN             # Parens
        | (UMINUS|NOT) expr              # Unary
        | expr (TIMES|DIV|REMAINDER) expr # MulDiv
