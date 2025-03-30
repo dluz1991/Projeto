@@ -1,7 +1,5 @@
 package CodeGenerator;
 
-import Calc.CalcBaseVisitor;
-
 public class TypeChecker extends CalcBaseVisitor<Void> {
 
     // the target code
