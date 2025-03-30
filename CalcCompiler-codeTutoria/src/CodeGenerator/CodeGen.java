@@ -12,7 +12,6 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     // the target code
     private final ArrayList<Instruction> code = new ArrayList<>();
 
-
     @Override public Void visitProg(CalcParser.ProgContext ctx) { return visitChildren(ctx); }
 
     @Override public Void visitStat(CalcParser.StatContext ctx) {
