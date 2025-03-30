@@ -16,8 +16,8 @@ public class calCompiler {
         }
         showAsm = args.length == 2 && args[1].equals("-asm");
         String inputFilename = args[0];
-        if (!inputFilename.endsWith(".cal")) {
-            System.out.println("input file must have a '.cal' extension");
+        if (!inputFilename.endsWith(".tuga")) {
+            System.out.println("input file must have a '.tuga' extension");
             System.exit(0);
         }
         String outputFilename = inputFilename + "bc";
@@ -29,11 +29,15 @@ public class calCompiler {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CalcParser parser = new CalcParser(tokens);
             ParseTree tree = parser.prog();
+
+            TypeChecker checker = new TypeChecker();
+            checker.visit(tree);
+
             int numParsingErrors = parser.getNumberOfSyntaxErrors();
             if (numParsingErrors != 0)
                 System.out.println(inputFilename + " has " + numParsingErrors + " syntax errors");
             else {
-                CodeGen codeGen = new CodeGen();
+                CodeGen codeGen = new CodeGen(checker);
                 codeGen.visit(tree);
                 if (showAsm) codeGen.dumpCode();
                 codeGen.saveBytecodes(outputFilename);
