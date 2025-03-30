@@ -61,8 +61,6 @@ public enum OpCode {
     bdifferent (0),
     btos (0),
     bprint   (0),
-
-
     ;
 
 
