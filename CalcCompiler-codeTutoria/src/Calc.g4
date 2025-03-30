@@ -6,12 +6,12 @@ stat   : 'escreve' expr SCOMMA NEWLINE;
 
 
 expr   : LPAREN expr RPAREN             # Parens
-       | (UMINUS|NOT) expr              # Unary
-       | expr (TIMES|DIV|REMAINDER) expr # MulDiv
-       | expr (PLUS|MINUS) expr          # AddSub
-       | expr (LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
-       | expr AND expr             # And
-       | expr OR expr              # Or
+       | op=(UMINUS|NOT) expr              # Unary
+       | expr op=(TIMES|DIV|REMAINDER) expr # MulDiv
+       | expr op=(PLUS|MINUS) expr          # AddSub
+       | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
+       | expr op=AND expr             # And
+       | expr op=OR expr              # Or
        | INT                        # Int
        |REAL                        # Real
        |STRING                      # String

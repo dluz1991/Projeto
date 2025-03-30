@@ -228,6 +228,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class OrContext extends ExprContext {
+		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -270,6 +271,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class MulDivContext extends ExprContext {
+		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -296,6 +298,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class AddSubContext extends ExprContext {
+		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -343,6 +346,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class AndContext extends ExprContext {
+		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -385,6 +389,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class RelationalContext extends ExprContext {
+		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -432,6 +437,7 @@ public class CalcParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class UnaryContext extends ExprContext {
+		public Token op;
 		public ExprContext expr() {
 			return getRuleContext(ExprContext.class,0);
 		}
@@ -511,9 +517,10 @@ public class CalcParser extends Parser {
 				_ctx = _localctx;
 				_prevctx = _localctx;
 				setState(23);
+				((UnaryContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==UMINUS || _la==NOT) ) {
-				_errHandler.recoverInline(this);
+					((UnaryContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 				}
 				else {
 					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
@@ -582,9 +589,10 @@ public class CalcParser extends Parser {
 						setState(31);
 						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
 						setState(32);
+						((MulDivContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 896L) != 0)) ) {
-						_errHandler.recoverInline(this);
+							((MulDivContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
 							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
@@ -602,9 +610,10 @@ public class CalcParser extends Parser {
 						setState(34);
 						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
 						setState(35);
+						((AddSubContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==PLUS || _la==MINUS) ) {
-						_errHandler.recoverInline(this);
+							((AddSubContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
 							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
@@ -622,9 +631,10 @@ public class CalcParser extends Parser {
 						setState(37);
 						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
 						setState(38);
+						((RelationalContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 64512L) != 0)) ) {
-						_errHandler.recoverInline(this);
+							((RelationalContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
 							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
@@ -642,7 +652,7 @@ public class CalcParser extends Parser {
 						setState(40);
 						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(41);
-						match(AND);
+						((AndContext)_localctx).op = match(AND);
 						setState(42);
 						expr(7);
 						}
@@ -654,7 +664,7 @@ public class CalcParser extends Parser {
 						setState(43);
 						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
 						setState(44);
-						match(OR);
+						((OrContext)_localctx).op = match(OR);
 						setState(45);
 						expr(6);
 						}

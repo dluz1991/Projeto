@@ -12,79 +12,46 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     // the target code
     private final ArrayList<Instruction> code = new ArrayList<>();
 
-    // stat: expr NEWLINE;
-    @Override
-    public Void visitStat(CalcParser.StatContext ctx) {
+
+    @Override public Void visitProg(CalcParser.ProgContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitStat(CalcParser.StatContext ctx) {
         visit(ctx.expr());
         emit(OpCode.iprint);
         return null;
     }
 
-    // expr: '-' expr                          # Uminus
-    @Override
-    public Void visitUminus(CalcParser.UminusContext ctx) {
-        visit(ctx.expr());
-        emit(OpCode.iuminus);
-        return null;
-    }
+    @Override public Void visitOr(CalcParser.OrContext ctx) { return visitChildren(ctx); }
 
-    // expr: expr op=('*'|'/') expr            # MulDiv
-    @Override
-    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
+    @Override public Void visitBool(CalcParser.BoolContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitMulDiv(CalcParser.MulDivContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         if ("*".equals(ctx.op.getText())) emit(OpCode.imult);
         else // must be /
             emit(OpCode.idiv);
+        return null; }
+
+    @Override public Void visitAddSub(CalcParser.AddSubContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitParens(CalcParser.ParensContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitAnd(CalcParser.AndContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitReal(CalcParser.RealContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitRelational(CalcParser.RelationalContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitString(CalcParser.StringContext ctx) { return visitChildren(ctx); }
+
+    @Override public Void visitUnary(CalcParser.UnaryContext ctx) {
+        visit(ctx.expr());
+        emit(OpCode.iuminus);
         return null;
     }
 
-    // expr: expr op=('+'|'-') expr            # AddSub
-    @Override
-    public Void visitAddSub(CalcParser.AddSubContext ctx) {
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-        if ("+".equals(ctx.op.getText())) emit(OpCode.iadd);
-        else // must be -
-            emit(OpCode.isub);
-        return null;
-    }
-
-    // expr: INT                           # Int
-    @Override
-    public Void visitInt(CalcParser.IntContext ctx) {
-        emit(OpCode.iconst, Integer.valueOf(ctx.INT().getText()));
-        return null;
-    }
-
-    // expr:  '(' expr ')'                      # Parens
-    @Override
-    public Void visitParens(CalcParser.ParensContext ctx) {
-        return visit(ctx.expr());
-    }
-
-    //expr: expr '^' expr
-    @Override
-    public Void visitExp(CalcParser.ExpContext ctx) {
-        if (ctx.expr(1).getText().equals("0")) {
-            emit(OpCode.iconst, 1);
-            return null;
-        } else if (Integer.valueOf(ctx.expr(1).getText()) > 0) {
-            visit(ctx.expr(0));
-            int exp = Integer.valueOf(ctx.expr(1).getText());
-            if ("^".equals(ctx.op.getText())) {
-                for (int i = 0; i < exp - 1; i++) {
-                    visit(ctx.expr(0));
-                    emit(OpCode.imult);
-                }
-            }
-        }
-//        }else {
-//            visit(ctx.expr(0));
-//
-//        }
-        return null;
-        }
+    @Override public Void visitInt(CalcParser.IntContext ctx) { return visitChildren(ctx); }
     
    /*
         Utility functions
