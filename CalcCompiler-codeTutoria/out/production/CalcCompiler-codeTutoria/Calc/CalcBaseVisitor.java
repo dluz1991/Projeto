@@ -32,6 +32,13 @@ public class CalcBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements C
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitEqualNotEqual(CalcParser.EqualNotEqualContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitMulDiv(CalcParser.MulDivContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -46,21 +53,49 @@ public class CalcBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements C
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitUminus(CalcParser.UminusContext ctx) { return visitChildren(ctx); }
+	@Override public T visitReal(CalcParser.RealContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitParens(CalcParser.ParensContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRelational(CalcParser.RelationalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExp(CalcParser.ExpContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLogical(CalcParser.LogicalContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitString(CalcParser.StringContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitBoolean(CalcParser.BooleanContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitParentheses(CalcParser.ParenthesesContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitUnary(CalcParser.UnaryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

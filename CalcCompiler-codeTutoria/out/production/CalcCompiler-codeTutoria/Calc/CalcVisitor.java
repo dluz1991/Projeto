@@ -23,6 +23,13 @@ public interface CalcVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStat(CalcParser.StatContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code EqualNotEqual}
+	 * labeled alternative in {@link CalcParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEqualNotEqual(CalcParser.EqualNotEqualContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code MulDiv}
 	 * labeled alternative in {@link CalcParser#expr}.
 	 * @param ctx the parse tree
@@ -37,26 +44,54 @@ public interface CalcVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAddSub(CalcParser.AddSubContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code Uminus}
+	 * Visit a parse tree produced by the {@code Real}
 	 * labeled alternative in {@link CalcParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitUminus(CalcParser.UminusContext ctx);
+	T visitReal(CalcParser.RealContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code Parens}
+	 * Visit a parse tree produced by the {@code Relational}
 	 * labeled alternative in {@link CalcParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitParens(CalcParser.ParensContext ctx);
+	T visitRelational(CalcParser.RelationalContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code Exp}
+	 * Visit a parse tree produced by the {@code Logical}
 	 * labeled alternative in {@link CalcParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitExp(CalcParser.ExpContext ctx);
+	T visitLogical(CalcParser.LogicalContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code String}
+	 * labeled alternative in {@link CalcParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitString(CalcParser.StringContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Boolean}
+	 * labeled alternative in {@link CalcParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBoolean(CalcParser.BooleanContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Parentheses}
+	 * labeled alternative in {@link CalcParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParentheses(CalcParser.ParenthesesContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Unary}
+	 * labeled alternative in {@link CalcParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUnary(CalcParser.UnaryContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code Int}
 	 * labeled alternative in {@link CalcParser#expr}.

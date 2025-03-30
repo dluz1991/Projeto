@@ -41,6 +41,18 @@ public class CalcBaseListener implements CalcListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterEqualNotEqual(CalcParser.EqualNotEqualContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitEqualNotEqual(CalcParser.EqualNotEqualContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterMulDiv(CalcParser.MulDivContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -65,37 +77,85 @@ public class CalcBaseListener implements CalcListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterUminus(CalcParser.UminusContext ctx) { }
+	@Override public void enterReal(CalcParser.RealContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitUminus(CalcParser.UminusContext ctx) { }
+	@Override public void exitReal(CalcParser.RealContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParens(CalcParser.ParensContext ctx) { }
+	@Override public void enterRelational(CalcParser.RelationalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitParens(CalcParser.ParensContext ctx) { }
+	@Override public void exitRelational(CalcParser.RelationalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExp(CalcParser.ExpContext ctx) { }
+	@Override public void enterLogical(CalcParser.LogicalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExp(CalcParser.ExpContext ctx) { }
+	@Override public void exitLogical(CalcParser.LogicalContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterString(CalcParser.StringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitString(CalcParser.StringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBoolean(CalcParser.BooleanContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBoolean(CalcParser.BooleanContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterParentheses(CalcParser.ParenthesesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitParentheses(CalcParser.ParenthesesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterUnary(CalcParser.UnaryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUnary(CalcParser.UnaryContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
