@@ -41,6 +41,8 @@ STRING   : '"' (~["\r\n])* '"' ;
 BOOLEAN  : 'verdadeiro' | 'falso' ;
 NEWLINE  : '\r'? '\n' ;
 WS       : [ \t\r\n]+ -> skip ;
+SL_COMMENT : '//' .*? (EOF|'\n') -> skip; // single-line comment
+ML_COMMENT : '/*' .*? '*/' -> skip ; // multi-line comment
 
 fragment
 DIGIT    : [0-9] ;
