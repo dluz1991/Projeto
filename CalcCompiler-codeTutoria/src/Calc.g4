@@ -40,6 +40,8 @@ REAL     : DIGIT+ '.' DIGIT+ ;
 STRING   : '"' .*? '"' ;
 BOOL     : 'verdadeiro' | 'falso' ;
 SCOMMA   : ';' ;
+SL_COMMENT : '//' .*? (EOF|'\n') -> skip; // single-line comment
+ML_COMMENT : '/*' .*? '*/' -> skip ; // multi-line comment
 NEWLINE  : '\r'? '\n' ;
 WS       : [ \t\r\n]+ -> skip ;
 
