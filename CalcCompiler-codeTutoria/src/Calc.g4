@@ -20,7 +20,7 @@ expr   : LPAREN expr RPAREN             # Parens
 
 LPAREN  : '(' ;
 RPAREN  : ')' ;
-UMINUS  : '-' ;
+UMINUS  : MINUS ;
 PLUS    : '+' ;
 MINUS   : '-' ;
 TIMES   : '*' ;
