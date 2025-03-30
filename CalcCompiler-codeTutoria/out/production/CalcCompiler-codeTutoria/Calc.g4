@@ -4,17 +4,17 @@ prog   : stat+ EOF;
 
 stat   : 'escreve' expr COMMA NEWLINE;
 
-expr   : LPAREN expr RPAREN
-       | (UMINUS|NOT) expr
-       | expr (MULT|DIV|REMAINDER) expr
-       | expr (PLUS|SUB) expr
-       | expr (LESS|GREATER|LESSEQUAL|GREATEREQUAL) expr
-       | expr (EQUAL|NOTEQUAL) expr
-       | expr (AND|OR) expr
-       | INT
-       | REAL
-       | STRING
-       | BOOLEAN
+expr   : LPAREN expr RPAREN                             # Parentheses
+       | (UMINUS|NOT) expr                              # Unary
+       | expr (MULT|DIV|REMAINDER) expr                 # MulDiv
+       | expr (PLUS|SUB) expr                           # AddSub
+       | expr (LESS|GREATER|LESSEQUAL|GREATEREQUAL) expr # Relational
+       | expr (EQUAL|NOTEQUAL) expr                     # EqualNotEqual
+       | expr (AND|OR) expr                             # Logical
+       | INT                                            # Int
+       | REAL                                           # Real
+       | STRING                                         # String
+       | BOOLEAN                                        # Boolean
        ;
 
 LPAREN : '(' ;
