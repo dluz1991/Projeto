@@ -1,231 +1,157 @@
 package CodeGenerator;
 
 import Calc.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.Stack;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TypeChecker extends CalcBaseVisitor<Void> {
 
-    private Stack<Tipo> types = new Stack<>();
+    // Guarda o tipo de cada nó
+    private final Map<ParseTree, Tipo> types = new HashMap<>();
 
-
-    private void typeToUse(Tipo t1, Tipo t2) {
+    private Tipo combinarTipos(Tipo t1, Tipo t2) {
         switch (t1) {
             case INT -> {
-                if (t2 == Tipo.INT) types.push(Tipo.INT);
-                else if (t2 == Tipo.REAL) types.push(Tipo.REAL);
-                else if (t2 == Tipo.STRING) types.push(Tipo.STRING);
+                if (t2 == Tipo.INT) return Tipo.INT;
+                else if (t2 == Tipo.REAL) return Tipo.REAL;
+                else if (t2 == Tipo.STRING) return Tipo.STRING;
             }
             case REAL -> {
-                if (t2 == Tipo.INT || t2 == Tipo.REAL) types.push(Tipo.REAL);
-                else if (t2 == Tipo.STRING) types.push(Tipo.STRING);
+                if (t2 == Tipo.INT || t2 == Tipo.REAL) return Tipo.REAL;
+                else if (t2 == Tipo.STRING) return Tipo.STRING;
             }
             case STRING -> {
-                if (t2 == Tipo.STRING || t2 == Tipo.INT || t2 == Tipo.REAL || t2 == Tipo.BOOL) types.push(Tipo.STRING);
+                if (t2 == Tipo.STRING || t2 == Tipo.INT || t2 == Tipo.REAL || t2 == Tipo.BOOL)
+                    return Tipo.STRING;
             }
             case BOOL -> {
-                if (t2 == Tipo.STRING) types.push(Tipo.STRING);
-                else if (t2 == Tipo.BOOL) types.push(Tipo.BOOL);
+                if (t2 == Tipo.STRING) return Tipo.STRING;
+                else if (t2 == Tipo.BOOL) return Tipo.BOOL;
             }
-            default -> types.push(Tipo.ERRO);
         }
+        return Tipo.ERRO;
     }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-
 
     @Override
     public Void visitProg(CalcParser.ProgContext ctx) {
-
         return visitChildren(ctx);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
     public Void visitStat(CalcParser.StatContext ctx) {
-        return visitChildren(ctx);
+        visit(ctx.expr());
+        Tipo tipo = types.get(ctx.expr());
+        if (tipo == Tipo.ERRO) {
+            System.err.println("Erro de tipo na expressão.");
+        }
+        return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
     public Void visitOr(CalcParser.OrContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
-
-        Tipo t2 = types.pop();
-        Tipo t1 = types.pop();
-
-        typeToUse(t1, t2);
-
+        Tipo t1 = types.get(ctx.expr(0));
+        Tipo t2 = types.get(ctx.expr(1));
+        Tipo result = combinarTipos(t1, t2);
+        types.put(ctx, result);
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override
-    public Void visitBool(CalcParser.BoolContext ctx) {
-        types.push(Tipo.BOOL);
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override
-    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-
-        Tipo t2 = types.pop();
-        Tipo t1 = types.pop();
-
-        typeToUse(t1, t2);
-
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override
-    public Void visitAddSub(CalcParser.AddSubContext ctx) {
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-
-        Tipo t2 = types.pop();
-        Tipo t1 = types.pop();
-
-        typeToUse(t1, t2);
-
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override
-    public Void visitParens(CalcParser.ParensContext ctx) {
-        visit(ctx.expr());
-        //visita o nó até ao no terminal e faz push a esse tipo
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
     public Void visitAnd(CalcParser.AndContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
-
-        Tipo t2 = types.pop();
-        Tipo t1 = types.pop();
-
-        typeToUse(t1, t2);
-
+        Tipo t1 = types.get(ctx.expr(0));
+        Tipo t2 = types.get(ctx.expr(1));
+        Tipo result = combinarTipos(t1, t2);
+        types.put(ctx, result);
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
-    public Void visitReal(CalcParser.RealContext ctx) {
-        types.push(Tipo.REAL);
+    public Void visitAddSub(CalcParser.AddSubContext ctx) {
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
+        Tipo t1 = types.get(ctx.expr(0));
+        Tipo t2 = types.get(ctx.expr(1));
+        Tipo result = combinarTipos(t1, t2);
+        types.put(ctx, result);
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
+    @Override
+    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
+        Tipo t1 = types.get(ctx.expr(0));
+        Tipo t2 = types.get(ctx.expr(1));
+        Tipo result = combinarTipos(t1, t2);
+        types.put(ctx, result);
+        return null;
+    }
+
     @Override
     public Void visitRelational(CalcParser.RelationalContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
-
-        Tipo t2 = types.pop();
-        Tipo t1 = types.pop();
-
-        typeToUse(t1, t2);
-
+        Tipo t1 = types.get(ctx.expr(0));
+        Tipo t2 = types.get(ctx.expr(1));
+        // comparações devolvem sempre BOOL, se tipos forem compatíveis
+        if ((t1 == Tipo.INT || t1 == Tipo.REAL) && (t2 == Tipo.INT || t2 == Tipo.REAL)) {
+            types.put(ctx, Tipo.BOOL);
+        } else if (t1 == t2) {
+            types.put(ctx, Tipo.BOOL);
+        } else {
+            types.put(ctx, Tipo.ERRO);
+        }
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override
-    public Void visitString(CalcParser.StringContext ctx) {
-        types.push(Tipo.STRING);
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
     public Void visitUnary(CalcParser.UnaryContext ctx) {
         visit(ctx.expr());
-        // visita o no até ao terminal e faz push do tipo
-
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
+    @Override
+    public Void visitParens(CalcParser.ParensContext ctx) {
+        visit(ctx.expr());
+        return null;
+    }
+
     @Override
     public Void visitInt(CalcParser.IntContext ctx) {
-        types.push(Tipo.INT);
+        types.put(ctx, Tipo.INT);
         return null;
     }
 
-    public Stack<Tipo> getTypes() {return types;}
+    @Override
+    public Void visitReal(CalcParser.RealContext ctx) {
+        types.put(ctx, Tipo.REAL);
+        return null;
+    }
 
+    @Override
+    public Void visitString(CalcParser.StringContext ctx) {
+        types.put(ctx, Tipo.STRING);
+        return null;
+    }
+
+    @Override
+    public Void visitBool(CalcParser.BoolContext ctx) {
+        types.put(ctx, Tipo.BOOL);
+        return null;
+    }
+
+    // Getter para consultar o tipo de qualquer nó
+    public Tipo getTipo(ParseTree node) {
+        return types.getOrDefault(node, Tipo.ERRO);
+    }
+
+    public Map<ParseTree, Tipo> getTypes() {
+        return types;
+    }
 }
