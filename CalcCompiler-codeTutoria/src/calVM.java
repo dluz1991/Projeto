@@ -14,8 +14,8 @@ public class calVM {
 
         boolean trace = args.length == 2 && args[1].equals("-trace");
         String filename = args[0];
-        if (!filename.endsWith(".calbc")) {
-            System.out.println("input file must have a '.calbc' extension");
+        if (!filename.endsWith(".tugabc")) {
+            System.out.println("input file must have a '.tugabc' extension");
             System.exit(0);
         }
         try {

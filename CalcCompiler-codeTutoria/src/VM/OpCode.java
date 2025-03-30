@@ -22,7 +22,6 @@ public enum OpCode {
     idifferent (0),
     iand     (0),
     ior      (0),
-    inot     (0),
     itos   (0),
     itod  (0),
     iprint   (0),
@@ -31,6 +30,8 @@ public enum OpCode {
     sconst   (1),
     sconcat   (0),
     sprint   (0),
+    sequal   (0),
+    sdifferent (0),
 
     //Real instructions
     dconst   (1),
@@ -48,7 +49,6 @@ public enum OpCode {
     ddifferent (0),
     dand     (0),
     dor      (0),
-    dnot     (0),
     dtos   (0),
     dprint   (0),
 
@@ -62,8 +62,9 @@ public enum OpCode {
     btos (0),
     bprint   (0),
 
-
+    halt     (0) // stop execution
     ;
+
 
 
     private final int nArgs;    // number of arguments
