@@ -87,8 +87,8 @@ public class CodeGen extends CalcBaseVisitor<Void> {
      */
     @Override
     public Void visitUnary(CalcParser.UnaryContext ctx) {
-        visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx);
+        visit(ctx.expr());
 
         if (ctx.op.getType() == CalcParser.UMINUS) {
             if (tipo == Tipo.INT) emit(OpCode.iuminus);
@@ -116,17 +116,15 @@ public class CodeGen extends CalcBaseVisitor<Void> {
      */
     @Override
     public Void visitAddSub(CalcParser.AddSubContext ctx) {
-        visit(ctx.expr(0));
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-
-        visit(ctx.expr(1));
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-
         Tipo resultado = typeChecker.getTipo(ctx);
         //resultado da operacao
         if (t1 != resultado) emitConversion(t1, resultado);
         if (t2 != resultado) emitConversion(t2, resultado);
 
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
 
         switch (resultado) {
             case INT -> emit(ctx.op.getText().equals("+") ? OpCode.iadd : OpCode.isub);
@@ -156,13 +154,12 @@ public class CodeGen extends CalcBaseVisitor<Void> {
      */
     @Override
     public Void visitMulDiv(CalcParser.MulDivContext ctx) {
-        visit(ctx.expr(0));
+        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
+        Tipo resultado = typeChecker.getTipo(ctx);
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
 
+        visit(ctx.expr(0));
         visit(ctx.expr(1));
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-
-        Tipo resultado = typeChecker.getTipo(ctx);
 
         if (t1 != resultado) emitConversion(t1, resultado);
         if (t2 != resultado) emitConversion(t2, resultado);
@@ -231,10 +228,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
      */
     @Override
     public Void visitRelational(CalcParser.RelationalContext ctx) {
-        visit(ctx.expr(0));
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-
-        visit(ctx.expr(1));
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
 
         Tipo tipoFinal = Tipo.BOOL; //tipo intermedio para decidir o opcode a usar. O tipo deste no ha de ser sempre booleano
@@ -245,6 +239,9 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         } else if (t1 == Tipo.STRING && t2 == Tipo.STRING) {
             tipoFinal = Tipo.STRING;
         }
+
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
 
         if (t1 != tipoFinal) emitConversion(t1, tipoFinal);
         if (t2 != tipoFinal) emitConversion(t2, tipoFinal);
