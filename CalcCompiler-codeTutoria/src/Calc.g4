@@ -5,13 +5,13 @@ prog   : stat+ EOF;
 stat   : 'escreve' expr SCOMMA NEWLINE;
 
 
-expr   : LPAREN expr RPAREN             # Parens
-       | op=(UMINUS|NOT) expr              # Unary
+expr   :op=(UMINUS|NOT) expr              # Unary
        | expr op=(TIMES|DIV|REMAINDER) expr # MulDiv
        | expr op=(PLUS|MINUS) expr          # AddSub
        | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
        | expr op=AND expr             # And
        | expr op=OR expr              # Or
+       |LPAREN expr RPAREN             # Parens
        | INT                        # Int
        |REAL                        # Real
        |STRING                      # String

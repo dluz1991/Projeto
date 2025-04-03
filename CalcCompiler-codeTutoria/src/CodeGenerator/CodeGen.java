@@ -12,9 +12,16 @@ public class CodeGen extends CalcBaseVisitor<Void> {
 
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
+    private final List<Object> constantPool = new ArrayList<>();
 
     public CodeGen(TypeChecker checker) {
         this.typeChecker = checker;
+    }
+
+    private void visitAndConvert(ParseTree expr, Tipo target) {
+        visit(expr);
+        Tipo origem = typeChecker.getTipo(expr);
+        if (origem != target) emitConversion(origem, target);
     }
 
     @Override
@@ -22,14 +29,16 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         visitChildren(ctx);
         emit(OpCode.halt);
         return null;
-
     }
 
     @Override
     public Void visitStat(CalcParser.StatContext ctx) {
         visit(ctx.expr());
-
         Tipo tipo = typeChecker.getTipo(ctx.expr());
+        if (tipo == Tipo.ERRO) {
+            System.err.println("Erro de tipo na expressão.");
+            return null;
+        }
         switch (tipo) {
             case INT -> emit(OpCode.iprint);
             case REAL -> emit(OpCode.dprint);
@@ -37,7 +46,6 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             case STRING -> emit(OpCode.sprint);
             default -> System.err.println("Tipo invalido para impressao.");
         }
-
         return null;
     }
 
@@ -50,21 +58,23 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     @Override
     public Void visitReal(CalcParser.RealContext ctx) {
         double val = Double.parseDouble(ctx.getText());
-        emit(OpCode.dconst, (int) val); // assume-se que dconst aceita inteiro representando double
+        int index = addToConstantPool(val);
+        emit(OpCode.dconst, index);
         return null;
     }
 
     @Override
     public Void visitBool(CalcParser.BoolContext ctx) {
-        boolean val = ctx.getText().equals("verdadeiro");
-        emit(OpCode.bconst, val ? 1 : 0);
+        if (ctx.getText().equals("verdadeiro")) emit(OpCode.tconst);
+        else if (ctx.getText().equals("falso")) emit(OpCode.fconst);
         return null;
     }
 
     @Override
     public Void visitString(CalcParser.StringContext ctx) {
         String text = ctx.getText().substring(1, ctx.getText().length() - 1);
-        emit(OpCode.sconst, text.hashCode()); // substituição simples sem tabelas
+        int index = addToConstantPool(text);
+        emit(OpCode.sconst, index);
         return null;
     }
 
@@ -74,230 +84,163 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Visit a parse tree produced .
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     * <p>
-     * Padrões permitidos :
-     * -INT
-     * -REAL
-     * NOT BOOL
-     */
     @Override
     public Void visitUnary(CalcParser.UnaryContext ctx) {
-        Tipo tipo = typeChecker.getTipo(ctx);
         visit(ctx.expr());
-
+        Tipo tipo = typeChecker.getTipo(ctx);
         if (ctx.op.getType() == CalcParser.UMINUS) {
             if (tipo == Tipo.INT) emit(OpCode.iuminus);
             else if (tipo == Tipo.REAL) emit(OpCode.duminus);
-            else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
+            else System.out.println("Erro: operação - inválida para tipo " + tipo);
         } else if (ctx.op.getType() == CalcParser.NOT) {
             if (tipo == Tipo.BOOL) emit(OpCode.bnot);
             else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
-
         }
-
         return null;
     }
 
-    /**
-     * Visit a parse tree produced by
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     * <p>
-     * Padrões permitidos :
-     * -INT
-     * -REAL
-     * -STRING
-     */
     @Override
     public Void visitAddSub(CalcParser.AddSubContext ctx) {
-        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-        Tipo resultado = typeChecker.getTipo(ctx);
-        //resultado da operacao
-        if (t1 != resultado) emitConversion(t1, resultado);
-        if (t2 != resultado) emitConversion(t2, resultado);
-
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-
-        switch (resultado) {
+        Tipo tipo = typeChecker.getTipo(ctx);
+        visitAndConvert(ctx.expr(0), tipo);
+        visitAndConvert(ctx.expr(1), tipo);
+        if (tipo == Tipo.ERRO) {
+            System.err.println("Erro de tipo na expressão.");
+            return null;
+        }
+        switch (tipo) {
             case INT -> emit(ctx.op.getText().equals("+") ? OpCode.iadd : OpCode.isub);
             case REAL -> emit(ctx.op.getText().equals("+") ? OpCode.dadd : OpCode.dsub);
             case STRING -> {
-                if (ctx.op.getText().equals("+")) {
-                    emit(OpCode.sconcat);
-                } else {
-                    System.err.println("Input has type checking errors");
-                }
+                if (ctx.op.getText().equals("+")) emit(OpCode.sconcat);
+                else System.err.println("Erro: operação inválida em STRING");
             }
-            default -> System.err.println("Input has type checking errors");
+            default -> System.err.println("Erro: tipo não suportado em AddSub");
         }
-
         return null;
     }
 
-    /**
-     * Visit a parse tree produced by
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     * <p>
-     * Padrões permitidos :
-     * -INT
-     * -REAL
-     */
     @Override
     public Void visitMulDiv(CalcParser.MulDivContext ctx) {
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-        Tipo resultado = typeChecker.getTipo(ctx);
-        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-
-        if (t1 != resultado) emitConversion(t1, resultado);
-        if (t2 != resultado) emitConversion(t2, resultado);
-
-        switch (resultado) {
+        Tipo tipo = typeChecker.getTipo(ctx);
+        visitAndConvert(ctx.expr(0), tipo);
+        visitAndConvert(ctx.expr(1), tipo);
+        if (tipo == Tipo.ERRO) {
+            System.err.println("Erro de tipo na expressão.");
+            return null;
+        }
+        String op = ctx.op.getText();
+        switch (tipo) {
             case INT -> {
-                if (ctx.op.getType() == CalcParser.TIMES) {
-                    emit(OpCode.imult);
-                } else if (ctx.op.getType() == CalcParser.DIV) {
-                    emit(OpCode.idiv);
+                switch (op) {
+                    case "*" -> emit(OpCode.imult);
+                    case "/" -> emit(OpCode.idiv);
+                    case "%" -> emit(OpCode.imod);
                 }
             }
             case REAL -> {
-                if (ctx.op.getType() == CalcParser.TIMES) {
-                    emit(OpCode.dmult);
-                } else if (ctx.op.getType() == CalcParser.DIV) {
-                    emit(OpCode.ddiv);
+                switch (op) {
+                    case "*" -> emit(OpCode.dmult);
+                    case "/" -> emit(OpCode.ddiv);
+                    case "%" -> emit(OpCode.dmod);
                 }
             }
-            default -> System.err.println("Input has type checking errors");
+            default -> System.err.println("Erro: tipo não suportado em MulDiv");
         }
-
         return null;
     }
 
-    /**
-     * Visit a parse tree produced by
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     * <p>
-     * Padrões permitidos :
-     * BOOLEAN
-     */
     @Override
     public Void visitAnd(CalcParser.AndContext ctx) {
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-        if (t1 == t2) emit(OpCode.band);
-        else System.out.println("Input has type checking errors");
+        visitAndConvert(ctx.expr(0), Tipo.BOOL);
+        visitAndConvert(ctx.expr(1), Tipo.BOOL);
+        emit(OpCode.and);
         return null;
     }
 
     @Override
     public Void visitOr(CalcParser.OrContext ctx) {
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-        if (t1 == t2) emit(OpCode.bor);
-        else System.out.println("Input has type checking errors");
+        visitAndConvert(ctx.expr(0), Tipo.BOOL);
+        visitAndConvert(ctx.expr(1), Tipo.BOOL);
+        emit(OpCode.bor);
         return null;
     }
 
-    /**
-     * Visit a parse tree produced by
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     * <p>
-     * Padrões permitidos :
-     * -INT
-     * -REAL
-     */
     @Override
     public Void visitRelational(CalcParser.RelationalContext ctx) {
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
 
-        Tipo tipoFinal = Tipo.BOOL; //tipo intermedio para decidir o opcode a usar. O tipo deste no ha de ser sempre booleano
-        if ((t1 == Tipo.REAL || t2 == Tipo.REAL)) {
-            tipoFinal = Tipo.REAL;
-        } else if (t1 == Tipo.INT && t2 == Tipo.INT) {
-            tipoFinal = Tipo.INT;
-        } else if (t1 == Tipo.STRING && t2 == Tipo.STRING) {
-            tipoFinal = Tipo.STRING;
+        Tipo tipoFinal;
+        if (t1 == Tipo.REAL || t2 == Tipo.REAL) tipoFinal = Tipo.REAL;
+        else if (t1 == Tipo.INT && t2 == Tipo.INT) tipoFinal = Tipo.INT;
+        else if (t1 == Tipo.STRING && t2 == Tipo.STRING) tipoFinal = Tipo.STRING;
+        else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL) tipoFinal = Tipo.BOOL;
+        else {
+            System.err.println("Tipos incompatíveis em Relational");
+            return null;
         }
 
-        visit(ctx.expr(0));
-        visit(ctx.expr(1));
-
-        if (t1 != tipoFinal) emitConversion(t1, tipoFinal);
-        if (t2 != tipoFinal) emitConversion(t2, tipoFinal);
+        visitAndConvert(ctx.expr(0), tipoFinal);
+        visitAndConvert(ctx.expr(1), tipoFinal);
 
         String op = ctx.op.getText();
 
         switch (tipoFinal) {
-            case INT -> {
+            case INT: {
                 switch (op) {
-                    case "<" -> emit(OpCode.iless);
-                    case ">" -> emit(OpCode.igreater);
-                    case "<=" -> emit(OpCode.ilessequal);
-                    case ">=" -> emit(OpCode.igreaterequal);
-                    case "igual" -> emit(OpCode.iequal);
-                    case "diferente" -> emit(OpCode.idifferent);
-                    default -> erroOpRel(op);
+                    case "<": emit(OpCode.ilt); break;
+                    case ">": emit(OpCode.igreater); break;
+                    case "<=": emit(OpCode.ilessequal); break;
+                    case ">=": emit(OpCode.igreaterequal); break;
+                    case "igual": emit(OpCode.ieq); break;
+                    case "diferente": emit(OpCode.idifferent); break;
+                    default: erroOpRel(op);
                 }
+                break;
             }
-            case REAL -> {
+            case REAL: {
                 switch (op) {
-                    case "<" -> emit(OpCode.dless);
-                    case ">" -> emit(OpCode.dgreater);
-                    case "<=" -> emit(OpCode.dlessequal);
-                    case ">=" -> emit(OpCode.dgreaterequal);
-                    case "igual" -> emit(OpCode.dequal);
-                    case "diferente" -> emit(OpCode.ddifferent);
-                    default -> erroOpRel(op);
+                    case "<": emit(OpCode.dlt); break;
+                    case ">": emit(OpCode.dgreater); break;
+                    case "<=": emit(OpCode.dlessequal); break;
+                    case ">=": emit(OpCode.dgreaterequal); break;
+                    case "igual": emit(OpCode.deq); break;
+                    case "diferente": emit(OpCode.ddifferent); break;
+                    default: erroOpRel(op);
                 }
+                break;
             }
-            case STRING -> {
+            case STRING: {
                 switch (op) {
-                    case "igual" -> emit(OpCode.sequal);
-                    case "diferente" -> emit(OpCode.sdifferent);
-                    default -> erroOpRel(op);
+                    case "igual": emit(OpCode.seq); break;
+                    case "diferente": emit(OpCode.sdifferent); break;
+                    default: erroOpRel(op);
                 }
+                break;
             }
-            case BOOL -> {
+            case BOOL: {
                 switch (op) {
-                    case "igual" -> emit(OpCode.bequal);
-                    case "diferente" -> emit(OpCode.bdifferent);
-                    default -> erroOpRel(op);
+                    case "igual": emit(OpCode.beq); break;
+                    case "diferente": emit(OpCode.bdifferent); break;
+                    default: erroOpRel(op);
                 }
+                break;
             }
-            default -> System.err.println("Input has type checking errors");
+            default:
+                System.err.println("Erro inesperado em Relational");
         }
 
         return null;
     }
 
+
     private void erroOpRel(String op) {
-        System.err.println("Input has parsing errors");
+        System.err.println("Operação relacional inválida: " + op);
     }
 
     private void emitConversion(Tipo de, Tipo para) {
         if (de == para) return;
-
         switch (de) {
             case INT -> {
                 if (para == Tipo.REAL) emit(OpCode.itod);
@@ -309,10 +252,11 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             case BOOL -> {
                 if (para == Tipo.STRING) emit(OpCode.btos);
             }
-            default -> System.err.println("Input has parsing errors");
+            default -> System.err.println("Conversão não suportada: " + de + " -> " + para);
         }
     }
 
+    //METODOS AUXILIARES
     public void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
@@ -339,5 +283,21 @@ public class CodeGen extends CalcBaseVisitor<Void> {
 
     public List<Instruction> getCode() {
         return code;
+    }
+
+    private int addToConstantPool(Object value) {
+        int index = constantPool.indexOf(value);
+        if (index != -1) {
+            return index;
+        }
+        constantPool.add(value);
+        return constantPool.size() - 1;
+    }
+
+    public Object getConstant(int index) {
+        if (index >= 0 && index < constantPool.size()) {
+            return constantPool.get(index);
+        }
+        return null;
     }
 }

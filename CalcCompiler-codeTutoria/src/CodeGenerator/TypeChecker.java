@@ -12,6 +12,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     private final Map<ParseTree, Tipo> types = new HashMap<>();
 
     private Tipo combinarTipos(Tipo t1, Tipo t2) {
+        if (t1 == Tipo.ERRO || t2 == Tipo.ERRO) return Tipo.ERRO;
         switch (t1) {
             case INT -> {
                 if (t2 == Tipo.INT) return Tipo.INT;
@@ -55,8 +56,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        Tipo result = combinarTipos(t1, t2);
-        types.put(ctx, result);
+        types.put(ctx, (t1 == Tipo.BOOL && t2 == Tipo.BOOL) ? Tipo.BOOL : Tipo.ERRO);
         return null;
     }
 
@@ -66,8 +66,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        Tipo result = combinarTipos(t1, t2);
-        types.put(ctx, result);
+        types.put(ctx, (t1 == Tipo.BOOL && t2 == Tipo.BOOL) ? Tipo.BOOL : Tipo.ERRO);
         return null;
     }
 
@@ -77,8 +76,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        Tipo result = combinarTipos(t1, t2);
-        types.put(ctx, result);
+        types.put(ctx, combinarTipos(t1, t2));
         return null;
     }
 
@@ -88,8 +86,15 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        Tipo result = combinarTipos(t1, t2);
-        types.put(ctx, result);
+        String op = ctx.op.getText();
+
+        if (t1 == Tipo.INT && t2 == Tipo.INT) {
+            types.put(ctx, Tipo.INT);
+        } else if ((t1 == Tipo.INT || t1 == Tipo.REAL) && (t2 == Tipo.INT || t2 == Tipo.REAL)) {
+            types.put(ctx, Tipo.REAL);
+        } else {
+            types.put(ctx, Tipo.ERRO);
+        }
         return null;
     }
 
@@ -99,10 +104,9 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        // comparações devolvem sempre BOOL, se tipos forem compatíveis
         if ((t1 == Tipo.INT || t1 == Tipo.REAL) && (t2 == Tipo.INT || t2 == Tipo.REAL)) {
             types.put(ctx, Tipo.BOOL);
-        } else if (t1 == t2) {
+        } else if (t1 == t2 && t1 != Tipo.ERRO) {
             types.put(ctx, Tipo.BOOL);
         } else {
             types.put(ctx, Tipo.ERRO);
@@ -113,12 +117,25 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     @Override
     public Void visitUnary(CalcParser.UnaryContext ctx) {
         visit(ctx.expr());
+        Tipo tipoExpr = types.get(ctx.expr());
+        if (ctx.op.getType() == CalcParser.UMINUS) {
+            if (tipoExpr == Tipo.INT || tipoExpr == Tipo.REAL)
+                types.put(ctx, tipoExpr);
+            else types.put(ctx, Tipo.ERRO);
+        } else if (ctx.op.getType() == CalcParser.NOT) {
+            if (tipoExpr == Tipo.BOOL)
+                types.put(ctx, Tipo.BOOL);
+            else types.put(ctx, Tipo.ERRO);
+        } else {
+            types.put(ctx, Tipo.ERRO);
+        }
         return null;
     }
 
     @Override
     public Void visitParens(CalcParser.ParensContext ctx) {
         visit(ctx.expr());
+        types.put(ctx, types.get(ctx.expr()));
         return null;
     }
 
