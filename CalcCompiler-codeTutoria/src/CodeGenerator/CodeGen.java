@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import Calc.*;
+import ConstantPool.ConstantPool;
 import VM.OpCode;
 import VM.Instruction.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -12,12 +13,18 @@ public class CodeGen extends CalcBaseVisitor<Void> {
 
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
-    private final List<Object> constantPool = new ArrayList<>();
+    private  ConstantPool constantPool = new ConstantPool();
 
-    public CodeGen(TypeChecker checker) {
+    //___________BUILDERS
+    public CodeGen(TypeChecker checker, ConstantPool constantPool) {
         this.typeChecker = checker;
+        this.constantPool= constantPool;
+    }
+    public CodeGen() {
+        this.typeChecker = new TypeChecker();
     }
 
+    //____________VISITORS__________________
     private void visitAndConvert(ParseTree expr, Tipo target) {
         visit(expr);
         Tipo origem = typeChecker.getTipo(expr);
@@ -58,7 +65,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     @Override
     public Void visitReal(CalcParser.RealContext ctx) {
         double val = Double.parseDouble(ctx.getText());
-        int index = addToConstantPool(val);
+        int index = constantPool.addDouble(val);
         emit(OpCode.dconst, index);
         return null;
     }
@@ -72,8 +79,8 @@ public class CodeGen extends CalcBaseVisitor<Void> {
 
     @Override
     public Void visitString(CalcParser.StringContext ctx) {
-        String text = ctx.getText().substring(1, ctx.getText().length() - 1);
-        int index = addToConstantPool(text);
+        String text = ctx.getText().substring(1, ctx.getText().length() - 1); // remove aspas
+        int index = constantPool.addString(text);
         emit(OpCode.sconst, index);
         return null;
     }
@@ -93,7 +100,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             else if (tipo == Tipo.REAL) emit(OpCode.duminus);
             else System.out.println("Erro: operação - inválida para tipo " + tipo);
         } else if (ctx.op.getType() == CalcParser.NOT) {
-            if (tipo == Tipo.BOOL) emit(OpCode.bnot);
+            if (tipo == Tipo.BOOL) emit(OpCode.not);
             else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
         }
         return null;
@@ -162,7 +169,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     public Void visitOr(CalcParser.OrContext ctx) {
         visitAndConvert(ctx.expr(0), Tipo.BOOL);
         visitAndConvert(ctx.expr(1), Tipo.BOOL);
-        emit(OpCode.bor);
+        emit(OpCode.or);
         return null;
     }
 
@@ -189,41 +196,77 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         switch (tipoFinal) {
             case INT: {
                 switch (op) {
-                    case "<": emit(OpCode.ilt); break;
-                    case ">": emit(OpCode.igreater); break;
-                    case "<=": emit(OpCode.ilessequal); break;
-                    case ">=": emit(OpCode.igreaterequal); break;
-                    case "igual": emit(OpCode.ieq); break;
-                    case "diferente": emit(OpCode.idifferent); break;
-                    default: erroOpRel(op);
+                    case "<":
+                        emit(OpCode.ilt);
+                        break;
+                    case ">":
+                        emit(OpCode.igreater);
+                        break;
+                    case "<=":
+                        emit(OpCode.ileq);
+                        break;
+                    case ">=":
+                        emit(OpCode.igreaterequal);
+                        break;
+                    case "igual":
+                        emit(OpCode.ieq);
+                        break;
+                    case "diferente":
+                        emit(OpCode.ineq);
+                        break;
+                    default:
+                        erroOpRel(op);
                 }
                 break;
             }
             case REAL: {
                 switch (op) {
-                    case "<": emit(OpCode.dlt); break;
-                    case ">": emit(OpCode.dgreater); break;
-                    case "<=": emit(OpCode.dlessequal); break;
-                    case ">=": emit(OpCode.dgreaterequal); break;
-                    case "igual": emit(OpCode.deq); break;
-                    case "diferente": emit(OpCode.ddifferent); break;
-                    default: erroOpRel(op);
+                    case "<":
+                        emit(OpCode.dlt);
+                        break;
+                    case ">":
+                        emit(OpCode.dgreater);
+                        break;
+                    case "<=":
+                        emit(OpCode.dleq);
+                        break;
+                    case ">=":
+                        emit(OpCode.dgreaterequal);
+                        break;
+                    case "igual":
+                        emit(OpCode.deq);
+                        break;
+                    case "diferente":
+                        emit(OpCode.dneq);
+                        break;
+                    default:
+                        erroOpRel(op);
                 }
                 break;
             }
             case STRING: {
                 switch (op) {
-                    case "igual": emit(OpCode.seq); break;
-                    case "diferente": emit(OpCode.sdifferent); break;
-                    default: erroOpRel(op);
+                    case "igual":
+                        emit(OpCode.seq);
+                        break;
+                    case "diferente":
+                        emit(OpCode.sneq);
+                        break;
+                    default:
+                        erroOpRel(op);
                 }
                 break;
             }
             case BOOL: {
                 switch (op) {
-                    case "igual": emit(OpCode.beq); break;
-                    case "diferente": emit(OpCode.bdifferent); break;
-                    default: erroOpRel(op);
+                    case "igual":
+                        emit(OpCode.beq);
+                        break;
+                    case "diferente":
+                        emit(OpCode.bneq);
+                        break;
+                    default:
+                        erroOpRel(op);
                 }
                 break;
             }
@@ -266,7 +309,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     public void dumpCode() {
-        System.out.println("Generated code in assembly format");
+        System.out.println("*** Instructions ***");
         for (int i = 0; i < code.size(); i++)
             System.out.println(i + ": " + code.get(i));
     }
@@ -285,7 +328,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         return code;
     }
 
-    private int addToConstantPool(Object value) {
+    /*private int addToConstantPool(Object value) {
         int index = constantPool.indexOf(value);
         if (index != -1) {
             return index;
@@ -300,4 +343,6 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         }
         return null;
     }
+*/
+
 }

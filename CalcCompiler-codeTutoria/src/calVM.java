@@ -24,7 +24,7 @@ public class calVM {
                 System.out.println("Bytecodes");
                 dumpBytecodes(bytecodes);
             }
-            vm VM = new vm(bytecodes, trace);
+            VirtualMachine VM = new VirtualMachine(bytecodes, trace, null);
             VM.run();
         }
         catch (java.io.IOException e) {

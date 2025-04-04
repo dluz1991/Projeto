@@ -29,15 +29,11 @@ public class calCompiler {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CalcParser parser = new CalcParser(tokens);
             ParseTree tree = parser.prog();
-
-            TypeChecker checker = new TypeChecker();
-            checker.visit(tree);
-
             int numParsingErrors = parser.getNumberOfSyntaxErrors();
             if (numParsingErrors != 0)
                 System.out.println(inputFilename + " has " + numParsingErrors + " syntax errors");
             else {
-                CodeGen codeGen = new CodeGen(checker);
+                CodeGen codeGen = new CodeGen();
                 codeGen.visit(tree);
                 if (showAsm) codeGen.dumpCode();
                 codeGen.saveBytecodes(outputFilename);

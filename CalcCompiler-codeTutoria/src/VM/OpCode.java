@@ -16,10 +16,10 @@ public enum OpCode {
     imod (0),
     ilt   (0),
     igreater (0),
-    ilessequal (0),
+    ileq (0),
     igreaterequal (0),
     ieq   (0),
-    idifferent (0),
+    ineq (0),
     itos   (0),
     itod  (0),
     iprint   (0),
@@ -29,7 +29,7 @@ public enum OpCode {
     sconcat   (0),
     sprint   (0),
     seq   (0),
-    sdifferent (0),
+    sneq(0),
 
     //Real instructions
     dconst   (1),
@@ -40,22 +40,22 @@ public enum OpCode {
     ddiv     (0),
     dmod (0),
     dlt(0),
-    dgreater (0),
-    dlessequal (0),
-    dgreaterequal (0),
+    dgreater (0), //nao existe na vm
+    dleq(0),
+    dgreaterequal (0), //nao exite na vm
     deq   (0),
-    ddifferent (0),
+    dneq (0),
     dtos   (0),
     dprint   (0),
 
     //Boolean instructions
     tconst   (0),
     fconst   (0),
-    bnot     (0),
+    not     (0),
     and     (0),
-    bor      (0),
+    or      (0),
     beq   (0),
-    bdifferent (0),
+    bneq (0),
     btos (0),
     bprint   (0),
 
