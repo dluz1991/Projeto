@@ -5,7 +5,7 @@ prog   : stat+ EOF;
 stat   : 'escreve' expr SCOMMA NEWLINE;
 
 
-expr   :op=(UMINUS|NOT) expr              # Unary
+expr   :op=(MINUS|NOT) expr              # Unary
        | expr op=(TIMES|DIV|REMAINDER) expr # MulDiv
        | expr op=(PLUS|MINUS) expr          # AddSub
        | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
@@ -20,7 +20,6 @@ expr   :op=(UMINUS|NOT) expr              # Unary
 
 LPAREN  : '(' ;
 RPAREN  : ')' ;
-UMINUS  : MINUS ;
 PLUS    : '+' ;
 MINUS   : '-' ;
 TIMES   : '*' ;

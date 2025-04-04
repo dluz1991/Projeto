@@ -118,7 +118,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     public Void visitUnary(CalcParser.UnaryContext ctx) {
         visit(ctx.expr());
         Tipo tipoExpr = types.get(ctx.expr());
-        if (ctx.op.getType() == CalcParser.UMINUS) {
+        if (ctx.op.getType() == CalcParser.MINUS) {
             if (tipoExpr == Tipo.INT || tipoExpr == Tipo.REAL)
                 types.put(ctx, tipoExpr);
             else types.put(ctx, Tipo.ERRO);

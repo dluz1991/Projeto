@@ -95,7 +95,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     public Void visitUnary(CalcParser.UnaryContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx);
-        if (ctx.op.getType() == CalcParser.UMINUS) {
+        if (ctx.op.getType() == CalcParser.MINUS) {
             if (tipo == Tipo.INT) emit(OpCode.iuminus);
             else if (tipo == Tipo.REAL) emit(OpCode.duminus);
             else System.out.println("Erro: operação - inválida para tipo " + tipo);
@@ -115,12 +115,18 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             System.err.println("Erro de tipo na expressão.");
             return null;
         }
+        String op = ctx.op.getText();
         switch (tipo) {
-            case INT -> emit(ctx.op.getText().equals("+") ? OpCode.iadd : OpCode.isub);
-            case REAL -> emit(ctx.op.getText().equals("+") ? OpCode.dadd : OpCode.dsub);
+            case INT ->{
+               if(op.equals("+")) emit(OpCode.iadd);
+               else if (op.equals("-")) emit(OpCode.isub);
+            }
+            case REAL -> {
+                if(op.equals("+")) emit(OpCode.dadd);
+                else if (op.equals("-")) emit(OpCode.dsub);
+            }
             case STRING -> {
-                if (ctx.op.getText().equals("+")) emit(OpCode.sconcat);
-                else System.err.println("Erro: operação inválida em STRING");
+                if (op.equals("+")) emit(OpCode.sconcat);
             }
             default -> System.err.println("Erro: tipo não suportado em AddSub");
         }

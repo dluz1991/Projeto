@@ -17,10 +17,10 @@ public class CalcParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, LPAREN=2, RPAREN=3, UMINUS=4, PLUS=5, MINUS=6, TIMES=7, DIV=8, 
-		REMAINDER=9, LESS=10, GREATER=11, LESSEQUAL=12, GREATEREQUAL=13, EQUAL=14, 
-		DIFFERENT=15, AND=16, OR=17, NOT=18, INT=19, REAL=20, STRING=21, BOOL=22, 
-		SCOMMA=23, SL_COMMENT=24, ML_COMMENT=25, NEWLINE=26, WS=27;
+		T__0=1, LPAREN=2, RPAREN=3, PLUS=4, MINUS=5, TIMES=6, DIV=7, REMAINDER=8, 
+		LESS=9, GREATER=10, LESSEQUAL=11, GREATEREQUAL=12, EQUAL=13, DIFFERENT=14, 
+		AND=15, OR=16, NOT=17, INT=18, REAL=19, STRING=20, BOOL=21, SCOMMA=22, 
+		SL_COMMENT=23, ML_COMMENT=24, NEWLINE=25, WS=26;
 	public static final int
 		RULE_prog = 0, RULE_stat = 1, RULE_expr = 2;
 	private static String[] makeRuleNames() {
@@ -32,18 +32,18 @@ public class CalcParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'escreve'", "'('", "')'", null, "'+'", "'-'", "'*'", "'/'", "'%'", 
-			"'<'", "'>'", "'<='", "'>='", "'igual'", "'diferente'", "'e'", "'ou'", 
-			"'nao'", null, null, null, null, "';'"
+			null, "'escreve'", "'('", "')'", "'+'", "'-'", "'*'", "'/'", "'%'", "'<'", 
+			"'>'", "'<='", "'>='", "'igual'", "'diferente'", "'e'", "'ou'", "'nao'", 
+			null, null, null, null, "';'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, "LPAREN", "RPAREN", "UMINUS", "PLUS", "MINUS", "TIMES", "DIV", 
-			"REMAINDER", "LESS", "GREATER", "LESSEQUAL", "GREATEREQUAL", "EQUAL", 
-			"DIFFERENT", "AND", "OR", "NOT", "INT", "REAL", "STRING", "BOOL", "SCOMMA", 
-			"SL_COMMENT", "ML_COMMENT", "NEWLINE", "WS"
+			null, null, "LPAREN", "RPAREN", "PLUS", "MINUS", "TIMES", "DIV", "REMAINDER", 
+			"LESS", "GREATER", "LESSEQUAL", "GREATEREQUAL", "EQUAL", "DIFFERENT", 
+			"AND", "OR", "NOT", "INT", "REAL", "STRING", "BOOL", "SCOMMA", "SL_COMMENT", 
+			"ML_COMMENT", "NEWLINE", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -441,7 +441,7 @@ public class CalcParser extends Parser {
 		public ExprContext expr() {
 			return getRuleContext(ExprContext.class,0);
 		}
-		public TerminalNode UMINUS() { return getToken(CalcParser.UMINUS, 0); }
+		public TerminalNode MINUS() { return getToken(CalcParser.MINUS, 0); }
 		public TerminalNode NOT() { return getToken(CalcParser.NOT, 0); }
 		public UnaryContext(ExprContext ctx) { copyFrom(ctx); }
 		@Override
@@ -496,30 +496,17 @@ public class CalcParser extends Parser {
 			setState(29);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
-			case LPAREN:
-				{
-				_localctx = new ParensContext(_localctx);
-				_ctx = _localctx;
-				_prevctx = _localctx;
-
-				setState(19);
-				match(LPAREN);
-				setState(20);
-				expr(0);
-				setState(21);
-				match(RPAREN);
-				}
-				break;
-			case UMINUS:
+			case MINUS:
 			case NOT:
 				{
 				_localctx = new UnaryContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(23);
+
+				setState(19);
 				((UnaryContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
-				if ( !(_la==UMINUS || _la==NOT) ) {
+				if ( !(_la==MINUS || _la==NOT) ) {
 					((UnaryContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 				}
 				else {
@@ -527,8 +514,21 @@ public class CalcParser extends Parser {
 					_errHandler.reportMatch(this);
 					consume();
 				}
-				setState(24);
-				expr(10);
+				setState(20);
+				expr(11);
+				}
+				break;
+			case LPAREN:
+				{
+				_localctx = new ParensContext(_localctx);
+				_ctx = _localctx;
+				_prevctx = _localctx;
+				setState(21);
+				match(LPAREN);
+				setState(22);
+				expr(0);
+				setState(23);
+				match(RPAREN);
 				}
 				break;
 			case INT:
@@ -587,11 +587,11 @@ public class CalcParser extends Parser {
 						_localctx = new MulDivContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(31);
-						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
+						if (!(precpred(_ctx, 10))) throw new FailedPredicateException(this, "precpred(_ctx, 10)");
 						setState(32);
 						((MulDivContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 896L) != 0)) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 448L) != 0)) ) {
 							((MulDivContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -600,7 +600,7 @@ public class CalcParser extends Parser {
 							consume();
 						}
 						setState(33);
-						expr(10);
+						expr(11);
 						}
 						break;
 					case 2:
@@ -608,7 +608,7 @@ public class CalcParser extends Parser {
 						_localctx = new AddSubContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(34);
-						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
+						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
 						setState(35);
 						((AddSubContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
@@ -621,7 +621,7 @@ public class CalcParser extends Parser {
 							consume();
 						}
 						setState(36);
-						expr(9);
+						expr(10);
 						}
 						break;
 					case 3:
@@ -629,11 +629,11 @@ public class CalcParser extends Parser {
 						_localctx = new RelationalContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(37);
-						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
+						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
 						setState(38);
 						((RelationalContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 64512L) != 0)) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 32256L) != 0)) ) {
 							((RelationalContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -642,7 +642,7 @@ public class CalcParser extends Parser {
 							consume();
 						}
 						setState(39);
-						expr(8);
+						expr(9);
 						}
 						break;
 					case 4:
@@ -650,11 +650,11 @@ public class CalcParser extends Parser {
 						_localctx = new AndContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(40);
-						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
+						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
 						setState(41);
 						((AndContext)_localctx).op = match(AND);
 						setState(42);
-						expr(7);
+						expr(8);
 						}
 						break;
 					case 5:
@@ -662,11 +662,11 @@ public class CalcParser extends Parser {
 						_localctx = new OrContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(43);
-						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
+						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(44);
 						((OrContext)_localctx).op = match(OR);
 						setState(45);
-						expr(6);
+						expr(7);
 						}
 						break;
 					}
@@ -699,21 +699,21 @@ public class CalcParser extends Parser {
 	private boolean expr_sempred(ExprContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 9);
+			return precpred(_ctx, 10);
 		case 1:
-			return precpred(_ctx, 8);
+			return precpred(_ctx, 9);
 		case 2:
-			return precpred(_ctx, 7);
+			return precpred(_ctx, 8);
 		case 3:
-			return precpred(_ctx, 6);
+			return precpred(_ctx, 7);
 		case 4:
-			return precpred(_ctx, 5);
+			return precpred(_ctx, 6);
 		}
 		return true;
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u001b4\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u001a4\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0001\u0000\u0004\u0000\b\b\u0000\u000b\u0000\f\u0000"+
 		"\t\u0001\u0000\u0001\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
 		"\u0001\u0001\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
@@ -722,34 +722,34 @@ public class CalcParser extends Parser {
 		"\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
 		"\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0005\u0002"+
 		"/\b\u0002\n\u0002\f\u00022\t\u0002\u0001\u0002\u0000\u0001\u0004\u0003"+
-		"\u0000\u0002\u0004\u0000\u0004\u0002\u0000\u0004\u0004\u0012\u0012\u0001"+
-		"\u0000\u0007\t\u0001\u0000\u0005\u0006\u0001\u0000\n\u000f;\u0000\u0007"+
+		"\u0000\u0002\u0004\u0000\u0004\u0002\u0000\u0005\u0005\u0011\u0011\u0001"+
+		"\u0000\u0006\b\u0001\u0000\u0004\u0005\u0001\u0000\t\u000e;\u0000\u0007"+
 		"\u0001\u0000\u0000\u0000\u0002\r\u0001\u0000\u0000\u0000\u0004\u001d\u0001"+
 		"\u0000\u0000\u0000\u0006\b\u0003\u0002\u0001\u0000\u0007\u0006\u0001\u0000"+
 		"\u0000\u0000\b\t\u0001\u0000\u0000\u0000\t\u0007\u0001\u0000\u0000\u0000"+
 		"\t\n\u0001\u0000\u0000\u0000\n\u000b\u0001\u0000\u0000\u0000\u000b\f\u0005"+
 		"\u0000\u0000\u0001\f\u0001\u0001\u0000\u0000\u0000\r\u000e\u0005\u0001"+
-		"\u0000\u0000\u000e\u000f\u0003\u0004\u0002\u0000\u000f\u0010\u0005\u0017"+
-		"\u0000\u0000\u0010\u0011\u0005\u001a\u0000\u0000\u0011\u0003\u0001\u0000"+
-		"\u0000\u0000\u0012\u0013\u0006\u0002\uffff\uffff\u0000\u0013\u0014\u0005"+
-		"\u0002\u0000\u0000\u0014\u0015\u0003\u0004\u0002\u0000\u0015\u0016\u0005"+
-		"\u0003\u0000\u0000\u0016\u001e\u0001\u0000\u0000\u0000\u0017\u0018\u0007"+
-		"\u0000\u0000\u0000\u0018\u001e\u0003\u0004\u0002\n\u0019\u001e\u0005\u0013"+
-		"\u0000\u0000\u001a\u001e\u0005\u0014\u0000\u0000\u001b\u001e\u0005\u0015"+
-		"\u0000\u0000\u001c\u001e\u0005\u0016\u0000\u0000\u001d\u0012\u0001\u0000"+
-		"\u0000\u0000\u001d\u0017\u0001\u0000\u0000\u0000\u001d\u0019\u0001\u0000"+
-		"\u0000\u0000\u001d\u001a\u0001\u0000\u0000\u0000\u001d\u001b\u0001\u0000"+
-		"\u0000\u0000\u001d\u001c\u0001\u0000\u0000\u0000\u001e0\u0001\u0000\u0000"+
-		"\u0000\u001f \n\t\u0000\u0000 !\u0007\u0001\u0000\u0000!/\u0003\u0004"+
-		"\u0002\n\"#\n\b\u0000\u0000#$\u0007\u0002\u0000\u0000$/\u0003\u0004\u0002"+
-		"\t%&\n\u0007\u0000\u0000&\'\u0007\u0003\u0000\u0000\'/\u0003\u0004\u0002"+
-		"\b()\n\u0006\u0000\u0000)*\u0005\u0010\u0000\u0000*/\u0003\u0004\u0002"+
-		"\u0007+,\n\u0005\u0000\u0000,-\u0005\u0011\u0000\u0000-/\u0003\u0004\u0002"+
-		"\u0006.\u001f\u0001\u0000\u0000\u0000.\"\u0001\u0000\u0000\u0000.%\u0001"+
-		"\u0000\u0000\u0000.(\u0001\u0000\u0000\u0000.+\u0001\u0000\u0000\u0000"+
-		"/2\u0001\u0000\u0000\u00000.\u0001\u0000\u0000\u000001\u0001\u0000\u0000"+
-		"\u00001\u0005\u0001\u0000\u0000\u000020\u0001\u0000\u0000\u0000\u0004"+
-		"\t\u001d.0";
+		"\u0000\u0000\u000e\u000f\u0003\u0004\u0002\u0000\u000f\u0010\u0005\u0016"+
+		"\u0000\u0000\u0010\u0011\u0005\u0019\u0000\u0000\u0011\u0003\u0001\u0000"+
+		"\u0000\u0000\u0012\u0013\u0006\u0002\uffff\uffff\u0000\u0013\u0014\u0007"+
+		"\u0000\u0000\u0000\u0014\u001e\u0003\u0004\u0002\u000b\u0015\u0016\u0005"+
+		"\u0002\u0000\u0000\u0016\u0017\u0003\u0004\u0002\u0000\u0017\u0018\u0005"+
+		"\u0003\u0000\u0000\u0018\u001e\u0001\u0000\u0000\u0000\u0019\u001e\u0005"+
+		"\u0012\u0000\u0000\u001a\u001e\u0005\u0013\u0000\u0000\u001b\u001e\u0005"+
+		"\u0014\u0000\u0000\u001c\u001e\u0005\u0015\u0000\u0000\u001d\u0012\u0001"+
+		"\u0000\u0000\u0000\u001d\u0015\u0001\u0000\u0000\u0000\u001d\u0019\u0001"+
+		"\u0000\u0000\u0000\u001d\u001a\u0001\u0000\u0000\u0000\u001d\u001b\u0001"+
+		"\u0000\u0000\u0000\u001d\u001c\u0001\u0000\u0000\u0000\u001e0\u0001\u0000"+
+		"\u0000\u0000\u001f \n\n\u0000\u0000 !\u0007\u0001\u0000\u0000!/\u0003"+
+		"\u0004\u0002\u000b\"#\n\t\u0000\u0000#$\u0007\u0002\u0000\u0000$/\u0003"+
+		"\u0004\u0002\n%&\n\b\u0000\u0000&\'\u0007\u0003\u0000\u0000\'/\u0003\u0004"+
+		"\u0002\t()\n\u0007\u0000\u0000)*\u0005\u000f\u0000\u0000*/\u0003\u0004"+
+		"\u0002\b+,\n\u0006\u0000\u0000,-\u0005\u0010\u0000\u0000-/\u0003\u0004"+
+		"\u0002\u0007.\u001f\u0001\u0000\u0000\u0000.\"\u0001\u0000\u0000\u0000"+
+		".%\u0001\u0000\u0000\u0000.(\u0001\u0000\u0000\u0000.+\u0001\u0000\u0000"+
+		"\u0000/2\u0001\u0000\u0000\u00000.\u0001\u0000\u0000\u000001\u0001\u0000"+
+		"\u0000\u00001\u0005\u0001\u0000\u0000\u000020\u0001\u0000\u0000\u0000"+
+		"\u0004\t\u001d.0";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

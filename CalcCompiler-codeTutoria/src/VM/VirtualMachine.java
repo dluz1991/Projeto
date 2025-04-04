@@ -298,14 +298,14 @@ public class VirtualMachine {
     private void exec_dgreaterequal() {
         double right = (Double) constantPool.get(stack.pop());
         double left = (Double) constantPool.get(stack.pop());
-        if (right<left) stack.push(1);
+        if (left>=right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_dgreater() {
         double right = (Double) constantPool.get(stack.pop());
         double left = (Double) constantPool.get(stack.pop());
-        if (left<=right) stack.push(1);
+        if (left>right) stack.push(1);
         else stack.push(0);
     }
 

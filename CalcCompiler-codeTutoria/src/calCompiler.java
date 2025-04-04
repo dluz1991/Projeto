@@ -8,7 +8,9 @@ import CodeGenerator.*;
 
 public class calCompiler {
     static boolean showAsm;    // flag for showing generated assembly
-
+//criar um identifier na gramatica para erros
+    // usar a stack<Object> runtime para guardar os valores resultado
+    //ler bem o main do prof para altr errors
     public static void main(String[] args) {
         if (args.length < 1) {
             System.out.println("Usage: java calcCompiler <filename> [-asm]");
