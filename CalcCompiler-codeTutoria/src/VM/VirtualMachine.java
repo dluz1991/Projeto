@@ -181,7 +181,7 @@ public class VirtualMachine {
         int v = stack.pop();
         double d = (double) v;
         // push the double to the stack
-       // stack.push(Double.doubleToLongBits(d)); //CONSTANT POOL TO BE INSERTED
+        // stack.push(Double.doubleToLongBits(d)); //CONSTANT POOL TO BE INSERTED
     }
 
     private void exec_imod() {
@@ -290,6 +290,7 @@ public class VirtualMachine {
         int nArgs;
         int v;
         switch (opc) {
+            //__________INTEGER___________________________________________
             case iconst:
                 v = ((Instruction1Arg) inst).getArg();
                 exec_iconst(v);
@@ -339,21 +340,7 @@ public class VirtualMachine {
             case iprint:
                 exec_iprint();
                 break;
-            default:
-                System.out.println("This should never happen! In file vm.java, method exec_inst()");
-                System.exit(1);
-        }
-    }
-
-
-    private void exec_dinst(Instruction inst) {
-        if (trace) {
-            System.out.println(String.format("%5s: %-15s Stack: %s", IP, inst, stack));
-        }
-        OpCode opc = inst.getOpCode();
-        int nArgs;
-        int v;
-        switch (opc) {
+            //__________REAL____________________________________________________
             case dconst:
                 v = ((Instruction1Arg) inst).getArg();
                 exec_dconst(v);
@@ -400,21 +387,7 @@ public class VirtualMachine {
             case dprint:
                 exec_dprint();
                 break;
-            default:
-                System.out.println("This should never happen! In file vm.java, method exec_dinst()");
-                System.exit(1);
-        }
-    }
-
-
-    private void exec_sinst(Instruction inst) {
-        if (trace) {
-            System.out.println(String.format("%5s: %-15s Stack: %s", IP, inst, stack));
-        }
-        OpCode opc = inst.getOpCode();
-        int nArgs;
-        int v;
-        switch (opc) {
+            //__________STRINGS__________________________________________
             case sconst:
                 v = ((Instruction1Arg) inst).getArg();
                 exec_sconst(v);
@@ -431,21 +404,7 @@ public class VirtualMachine {
             case sprint:
                 exec_sprint();
                 break;
-            default:
-                System.out.println("This should never happen! In file vm.java, method exec_inst()");
-                System.exit(1);
-        }
-    }
-
-
-    private void exec_binst(Instruction inst) {
-        if (trace) {
-            System.out.println(String.format("%5s: %-15s Stack: %s", IP, inst, stack));
-        }
-        OpCode opc = inst.getOpCode();
-        int nArgs;
-        int v;
-        switch (opc) {
+            //__________BOOLEAN__________________________________________
             case tconst:
                 exec_tconst();
                 break;
@@ -485,6 +444,7 @@ public class VirtualMachine {
             System.out.println("Trace while running the code");
             System.out.println("Execution starts at instrution " + IP);
         }
+        System.out.println("*** VM output ***");
         while (IP < code.length) {
             exec_inst(code[IP]);
             IP++;

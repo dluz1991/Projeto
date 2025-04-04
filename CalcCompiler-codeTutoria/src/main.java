@@ -12,6 +12,7 @@ import Calc.*;
 public class main {
     static boolean showAsm; // flag para mostrar bytecode gerado
     static boolean runAfterCompile;
+    static boolean trace;
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -22,6 +23,7 @@ public class main {
         String inputFilename = args[0];
         showAsm = contains(args, "-asm");
         runAfterCompile = contains(args, "-run");
+        trace = contains(args, "-trace");
 
         if (!inputFilename.endsWith(".tuga")) {
             System.out.println("O ficheiro deve ter a extensão '.tuga'");
@@ -62,7 +64,7 @@ public class main {
             // Execução na VM (opcional)
             if (runAfterCompile) {
                 byte[] bytecodes = loadBytecodes(outputFilename);
-                VirtualMachine vm = new VirtualMachine(bytecodes, showAsm, constantPool);
+                VirtualMachine vm = new VirtualMachine(bytecodes, trace, constantPool);
                 vm.run();
             }
 
