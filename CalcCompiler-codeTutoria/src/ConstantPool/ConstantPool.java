@@ -31,9 +31,7 @@ public class ConstantPool {
     // devolve e remove o valor da posição
     public Object get(int index) {
         if (index >= 0 && index < constants.size()) {
-            Object value = constants.get(index);
-            constants.set(index, null); // marca como "consumido"
-            return value;
+            return constants.get(index);
         }
         return null;
     }
@@ -57,7 +55,7 @@ public class ConstantPool {
             if (obj instanceof String) {
                 System.out.printf("%d: \"%s\"%n", i, obj);
             } else if (obj instanceof Double) {
-                System.out.printf("%d: %f%n", i, obj);
+                System.out.printf(Locale.US,"%d: %.1f%n", i, obj);
             }
         }
     }
