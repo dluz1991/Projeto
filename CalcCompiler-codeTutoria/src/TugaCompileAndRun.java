@@ -36,7 +36,7 @@ public class TugaCompileAndRun {
             System.exit(0);
         }
 
-        String outputFilename = inputFilename.replace(".tuga", ".tugabc");
+        String outputFilename = inputFilename.replace(".tuga", ".bc");
 
         try {
             // Fase de compilação
