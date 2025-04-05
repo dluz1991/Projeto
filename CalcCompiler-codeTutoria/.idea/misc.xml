@@ -13,6 +13,16 @@
           <option name="language" value="Java" />
           <option name="generateVisitor" value="true" />
         </PerGrammarGenerationSettings>
+        <PerGrammarGenerationSettings>
+          <option name="fileName" value="$PROJECT_DIR$/src/Tuga.g4" />
+          <option name="autoGen" value="true" />
+          <option name="outputDir" value="C:\Users\luz33\Desktop\UALG\2024_2025\2º Semestre\Compiladores\Projeto\CalcCompiler-codeTutoria\src" />
+          <option name="libDir" value="" />
+          <option name="encoding" value="" />
+          <option name="pkg" value="Tuga" />
+          <option name="language" value="Java" />
+          <option name="generateVisitor" value="true" />
+        </PerGrammarGenerationSettings>
       </list>
     </option>
   </component>
