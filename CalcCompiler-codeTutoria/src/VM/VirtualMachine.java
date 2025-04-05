@@ -12,7 +12,7 @@ public class VirtualMachine {
     private byte[] bytecodes;    // the bytecodes, storing just for displaying them. Not really needed
     private Instruction[] code;        // instructions (converted from the bytecodes)
     private int IP;                    // instruction pointer
-    private Stack<Integer> stack = new Stack<>();// runtime stack
+    private Stack<Object> stack = new Stack<>();// runtime stack
     private ConstantPool constantPool = new ConstantPool();  // runtime stack for the second operand
 
 
@@ -93,99 +93,83 @@ public class VirtualMachine {
     }
 
     private void exec_iuminus() {
-        int v = stack.pop();
+        int v =(Integer) stack.pop();
         stack.push(-v);
     }
 
     private void exec_iadd() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left = (Integer)stack.pop();
         stack.push(left + right);
     }
 
     private void exec_isub() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left = (Integer)stack.pop();
         stack.push(left - right);
     }
 
     private void exec_imult() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left = (Integer)stack.pop();
         stack.push(left * right);
     }
 
     private void exec_idiv() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left =(Integer) stack.pop();
         if (right != 0) stack.push(left / right);
         else runtime_error("division by 0");
     }
 
     private void exec_iprint() {
-        int v = stack.pop();
+        int v = (Integer)stack.pop();
         System.out.println(v);
     }
 
     private void exec_ilt() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left = (Integer)stack.pop();
         if (left < right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_ileq() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left =(Integer) stack.pop();
         if (left <= right) stack.push(1);
         else stack.push(0);
     }
 
-    private void exec_igreater() {
-        int right = stack.pop();
-        int left = stack.pop();
-        if (right < left) stack.push(1);
-        else stack.push(0);
-    }
-
-    private void exec_igreaterequal() {
-        int right = stack.pop();
-        int left = stack.pop();
-        if (right <= left) stack.push(1);
-        else stack.push(0);
-
-    }
 
     private void exec_ieq() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left = (Integer)stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_ineq() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left =(Integer) stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_itos() {
-        int v = stack.pop();
-        String s = String.valueOf(v);
+        String v = String.valueOf((Integer)stack.pop());
         // push the string to the stack
-        stack.push(constantPool.addString(s)); //CONSTANT POOL TO BE INSERTED
+        stack.push(v); //CONSTANT POOL TO BE INSERTED
     }
 
     private void exec_itod() {
-        int v = stack.pop();
-        double d = (double) v;
-        stack.push(constantPool.addDouble(v));
+        int d = (Integer)stack.pop();
+        stack.push((double)d);
     }
 
     private void exec_imod() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left =(Integer) stack.pop();
         if (right != 0) stack.push(left % right);
         else runtime_error("division by 0");
     }
@@ -194,190 +178,175 @@ public class VirtualMachine {
     private void exec_fconst() {
         stack.push(0);
     }
+    private void exec_tconst() {
+        stack.push(1);
+    }
 
     private void exec_not() {
-        int v = stack.pop();
+        int v = (Integer)stack.pop();
         if (v == 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_and() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left = (Integer)stack.pop();
         if (left != 0 && right != 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_or() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right = (Integer)stack.pop();
+        int left = (Integer)stack.pop();
         if (left != 0 || right != 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_beq() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left = (Integer)stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_bneq() {
-        int right = stack.pop();
-        int left = stack.pop();
+        int right =(Integer) stack.pop();
+        int left =(Integer) stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_btos() {
-        int v = stack.pop();
+        int v =(Integer) stack.pop();
         String s = v==0?"falso":"verdadeiro";
         // push the string to the stack
-        stack.push(constantPool.addString(s)); //CONSTANT POOL TO BE INSERTED
+        stack.push(s); //CONSTANT POOL TO BE INSERTED
     }
 
     private void exec_bprint() {
-        int v = stack.pop();
+        int v = (Integer)stack.pop();
         if (v == 0) System.out.println("falso");
-        else System.out.println("verdadeiro");
+        else if (v==1)System.out.println("verdadeiro");
     }
 
-    private void exec_tconst() {
-        stack.push(1);
-    }
+
 
     //___________STRING INSTRUCTIONS_____________________________________________________________
     private void exec_sprint() {
-        int v = stack.pop();
-        String s = String.valueOf(constantPool.get(v));
-        System.out.println(s);
+        String v = (String)stack.pop();
+        System.out.println(v);
     }
 
     private void exec_sneq() {
-        String right = String.valueOf(constantPool.get(stack.pop()));
-        String left = String.valueOf(constantPool.get(stack.pop()));
+        String right = (String) stack.pop();
+        String left = (String) stack.pop();
         if (!left.equals(right)) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_seq() {
-        String right = String.valueOf(constantPool.get(stack.pop()));
-        String left = String.valueOf(constantPool.get(stack.pop()));
+        String right = (String) stack.pop();
+        String left = (String) stack.pop();
         if (left.equals(right)) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_sconcat() {
-        String right = String.valueOf(constantPool.get(stack.pop()));
-        String left = String.valueOf(constantPool.get(stack.pop()));
+        String right = (String) stack.pop();
+        String left = (String) stack.pop();
         String s = left + right;
         // push the string to the stack
-        stack.push(constantPool.addString(s)); //CONSTANT POOL TO BE INSERTED
+        stack.push(s);
     }
 
     private void exec_sconst(int v) {
-        String s = String.valueOf(constantPool.get(v));
+        String s = (String) constantPool.get(v);
         // push the string to the stack
-        stack.push(constantPool.addString(s)); //CONSTANT POOL TO BE INSERTED
+        stack.push(s);
     }
 
     //___________REAL INSTRUCTIONS_____________________________________________________________
     private void exec_dprint() {
-        int v = stack.pop();
-        Double s = (Double) constantPool.get(v);
-        System.out.println(s);
+        Double v =(Double) stack.pop();
+        System.out.println(v);
     }
 
     private void exec_dtos() {
-        int v = stack.pop();
-        String s = String.valueOf((Double) constantPool.get(v));
+        double v = (Double)stack.pop();
+        String s = String.valueOf(v);
         // push the string to the stack
-        stack.push(constantPool.addString(s)); //CONSTANT POOL TO BE INSERTED
-    }
-
-    private void exec_dgreaterequal() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        if (left>=right) stack.push(1);
-        else stack.push(0);
-    }
-
-    private void exec_dgreater() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        if (left>right) stack.push(1);
-        else stack.push(0);
+        stack.push(s);
     }
 
     private void exec_dneq() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_deq() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
 
     }
 
     private void exec_dleq() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
         if (left <= right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_dlt() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
         if (left < right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_dmod() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        if (right != 0) stack.push(constantPool.addDouble(left % right));
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
+        if (right != 0) stack.push(left % right);
         else runtime_error("division by 0");
     }
 
     private void exec_ddiv() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        if (right != 0) stack.push(constantPool.addDouble(left / right));
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
+        if (right != 0) stack.push(left / right);
         else runtime_error("division by 0");
     }
 
     private void exec_dmult() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        stack.push(constantPool.addDouble(left * right));
+        double right = (Double)stack.pop();
+        double left = (Double)stack.pop();
+        stack.push(left * right);
     }
 
     private void exec_dsub() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        stack.push(constantPool.addDouble(left - right));
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
+        stack.push(left - right);
     }
 
     private void exec_dadd() {
-        double right = (Double) constantPool.get(stack.pop());
-        double left = (Double) constantPool.get(stack.pop());
-        stack.push(constantPool.addDouble(left + right));
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
+        stack.push(left + right);
     }
 
     private void exec_duminus() {
-        double v = (Double) constantPool.get(stack.pop());
-        stack.push(constantPool.addDouble(-v));
+        double v = (Double) stack.pop();
+        stack.push(-v);
     }
 
     private void exec_dconst(int v) {
-        double d = (double) constantPool.get(v);
-        stack.push(constantPool.addDouble(d));
+        double d = (Double) constantPool.get(v);
+        stack.push(d);
     }
 
     //___________TYPE INSTRUCTION_____________________________________________________________
@@ -417,12 +386,6 @@ public class VirtualMachine {
                 break;
             case ileq:
                 exec_ileq();
-                break;
-            case igreater:
-                exec_igreater();
-                break;
-            case igreaterequal:
-                exec_igreaterequal();
                 break;
             case ieq:
                 exec_ieq();
@@ -473,12 +436,6 @@ public class VirtualMachine {
                 break;
             case dneq:
                 exec_dneq();
-                break;
-            case dgreater:
-                exec_dgreater();
-                break;
-            case dgreaterequal:
-                exec_dgreaterequal();
                 break;
             case dtos:
                 exec_dtos();

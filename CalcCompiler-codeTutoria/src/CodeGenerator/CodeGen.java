@@ -109,8 +109,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     @Override
     public Void visitAddSub(CalcParser.AddSubContext ctx) {
         Tipo tipo = typeChecker.getTipo(ctx);
-        visitAndConvert(ctx.expr(0), tipo);
-        visitAndConvert(ctx.expr(1), tipo);
+
         if (tipo == Tipo.ERRO) {
             System.err.println("Erro de tipo na expressão.");
             return null;
@@ -118,15 +117,23 @@ public class CodeGen extends CalcBaseVisitor<Void> {
         String op = ctx.op.getText();
         switch (tipo) {
             case INT ->{
+                visitAndConvert(ctx.expr(0), tipo);
+                visitAndConvert(ctx.expr(1), tipo);
                if(op.equals("+")) emit(OpCode.iadd);
                else if (op.equals("-")) emit(OpCode.isub);
             }
             case REAL -> {
+                visitAndConvert(ctx.expr(0), tipo);
+                visitAndConvert(ctx.expr(1), tipo);
                 if(op.equals("+")) emit(OpCode.dadd);
                 else if (op.equals("-")) emit(OpCode.dsub);
             }
             case STRING -> {
-                if (op.equals("+")) emit(OpCode.sconcat);
+                if (op.equals("+")) {
+                    visitAndConvert(ctx.expr(0), Tipo.STRING);
+                    visitAndConvert(ctx.expr(1), Tipo.STRING);
+                    emit(OpCode.sconcat);
+                }
             }
             default -> System.err.println("Erro: tipo não suportado em AddSub");
         }
@@ -194,30 +201,42 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             return null;
         }
 
-        visitAndConvert(ctx.expr(0), tipoFinal);
-        visitAndConvert(ctx.expr(1), tipoFinal);
 
         String op = ctx.op.getText();
 
         switch (tipoFinal) {
             case INT: {
                 switch (op) {
+                    //Trocar a ordem das visitas para evitar conversões desnecessárias
+                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
                     case "<":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.ilt);
                         break;
                     case ">":
-                        emit(OpCode.igreater);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        emit(OpCode.ileq);
                         break;
                     case "<=":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.ileq);
                         break;
                     case ">=":
-                        emit(OpCode.igreaterequal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        emit(OpCode.ilt);
                         break;
                     case "igual":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.ieq);
                         break;
                     case "diferente":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.ineq);
                         break;
                     default:
@@ -227,22 +246,36 @@ public class CodeGen extends CalcBaseVisitor<Void> {
             }
             case REAL: {
                 switch (op) {
+                    //Trocar a ordem das visitas para evitar conversões desnecessárias
+                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
                     case "<":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.dlt);
                         break;
                     case ">":
-                        emit(OpCode.dgreater);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        emit(OpCode.dleq);
                         break;
                     case "<=":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.dleq);
                         break;
                     case ">=":
-                        emit(OpCode.dgreaterequal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        emit(OpCode.dlt);
                         break;
                     case "igual":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.deq);
                         break;
                     case "diferente":
+                        visitAndConvert(ctx.expr(0), tipoFinal);
+                        visitAndConvert(ctx.expr(1), tipoFinal);
                         emit(OpCode.dneq);
                         break;
                     default:
@@ -251,33 +284,26 @@ public class CodeGen extends CalcBaseVisitor<Void> {
                 break;
             }
             case STRING: {
+                visitAndConvert(ctx.expr(0), tipoFinal);
+                visitAndConvert(ctx.expr(1), tipoFinal);
                 switch (op) {
-                    case "igual":
-                        emit(OpCode.seq);
-                        break;
-                    case "diferente":
-                        emit(OpCode.sneq);
-                        break;
-                    default:
-                        erroOpRel(op);
+                    case "igual" -> emit(OpCode.seq);
+                    case "diferente" -> emit(OpCode.sneq);
+                    default -> erroOpRel(op);
                 }
                 break;
             }
             case BOOL: {
+                visitAndConvert(ctx.expr(0), tipoFinal);
+                visitAndConvert(ctx.expr(1), tipoFinal);
                 switch (op) {
-                    case "igual":
-                        emit(OpCode.beq);
-                        break;
-                    case "diferente":
-                        emit(OpCode.bneq);
-                        break;
-                    default:
-                        erroOpRel(op);
+                    case "igual" -> emit(OpCode.beq);
+                    case "diferente" -> emit(OpCode.bneq);
+                    default -> erroOpRel(op);
                 }
                 break;
             }
-            default:
-                System.err.println("Erro inesperado em Relational");
+
         }
 
         return null;

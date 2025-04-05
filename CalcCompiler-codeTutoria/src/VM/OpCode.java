@@ -15,9 +15,7 @@ public enum OpCode {
     idiv     (0),
     imod (0),
     ilt   (0),
-    igreater (0),
     ileq (0),
-    igreaterequal (0),
     ieq   (0),
     ineq (0),
     itos   (0),
@@ -40,9 +38,7 @@ public enum OpCode {
     ddiv     (0),
     dmod (0),
     dlt(0),
-    dgreater (0), //nao existe na vm
     dleq(0),
-    dgreaterequal (0), //nao exite na vm
     deq   (0),
     dneq (0),
     dtos   (0),
