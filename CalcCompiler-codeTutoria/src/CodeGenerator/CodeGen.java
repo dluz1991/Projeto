@@ -3,13 +3,13 @@ package CodeGenerator;
 import java.io.*;
 import java.util.*;
 
-import Calc.*;
+import Tuga.*;
 import ConstantPool.ConstantPool;
 import VM.OpCode;
 import VM.Instruction.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class CodeGen extends CalcBaseVisitor<Void> {
+public class CodeGen extends TugaBaseVisitor<Void> {
 
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
@@ -32,14 +32,14 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitProg(CalcParser.ProgContext ctx) {
+    public Void visitProg(TugaParser.ProgContext ctx) {
         visitChildren(ctx);
         emit(OpCode.halt);
         return null;
     }
 
     @Override
-    public Void visitStat(CalcParser.StatContext ctx) {
+    public Void visitStat(TugaParser.StatContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx.expr());
         if (tipo == Tipo.ERRO) {
@@ -57,13 +57,13 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInt(CalcParser.IntContext ctx) {
+    public Void visitInt(TugaParser.IntContext ctx) {
         emit(OpCode.iconst, Integer.parseInt(ctx.getText()));
         return null;
     }
 
     @Override
-    public Void visitReal(CalcParser.RealContext ctx) {
+    public Void visitReal(TugaParser.RealContext ctx) {
         double val = Double.parseDouble(ctx.getText());
         int index = constantPool.addDouble(val);
         emit(OpCode.dconst, index);
@@ -71,14 +71,14 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitBool(CalcParser.BoolContext ctx) {
+    public Void visitBool(TugaParser.BoolContext ctx) {
         if (ctx.getText().equals("verdadeiro")) emit(OpCode.tconst);
         else if (ctx.getText().equals("falso")) emit(OpCode.fconst);
         return null;
     }
 
     @Override
-    public Void visitString(CalcParser.StringContext ctx) {
+    public Void visitString(TugaParser.StringContext ctx) {
         String text = ctx.getText().substring(1, ctx.getText().length() - 1); // remove aspas
         int index = constantPool.addString(text);
         emit(OpCode.sconst, index);
@@ -86,20 +86,20 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitParens(CalcParser.ParensContext ctx) {
+    public Void visitParens(TugaParser.ParensContext ctx) {
         visit(ctx.expr());
         return null;
     }
 
     @Override
-    public Void visitUnary(CalcParser.UnaryContext ctx) {
+    public Void visitUnary(TugaParser.UnaryContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx);
-        if (ctx.op.getType() == CalcParser.MINUS) {
+        if (ctx.op.getType() == TugaParser.MINUS) {
             if (tipo == Tipo.INT) emit(OpCode.iuminus);
             else if (tipo == Tipo.REAL) emit(OpCode.duminus);
             else System.out.println("Erro: operação - inválida para tipo " + tipo);
-        } else if (ctx.op.getType() == CalcParser.NOT) {
+        } else if (ctx.op.getType() == TugaParser.NOT) {
             if (tipo == Tipo.BOOL) emit(OpCode.not);
             else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
         }
@@ -107,7 +107,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitAddSub(CalcParser.AddSubContext ctx) {
+    public Void visitAddSub(TugaParser.AddSubContext ctx) {
         Tipo tipo = typeChecker.getTipo(ctx);
 
         if (tipo == Tipo.ERRO) {
@@ -141,7 +141,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
+    public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         Tipo tipo = typeChecker.getTipo(ctx);
         visitAndConvert(ctx.expr(0), tipo);
         visitAndConvert(ctx.expr(1), tipo);
@@ -171,7 +171,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitAnd(CalcParser.AndContext ctx) {
+    public Void visitAnd(TugaParser.AndContext ctx) {
         visitAndConvert(ctx.expr(0), Tipo.BOOL);
         visitAndConvert(ctx.expr(1), Tipo.BOOL);
         emit(OpCode.and);
@@ -179,7 +179,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitOr(CalcParser.OrContext ctx) {
+    public Void visitOr(TugaParser.OrContext ctx) {
         visitAndConvert(ctx.expr(0), Tipo.BOOL);
         visitAndConvert(ctx.expr(1), Tipo.BOOL);
         emit(OpCode.or);
@@ -187,7 +187,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitRelational(CalcParser.RelationalContext ctx) {
+    public Void visitRelational(TugaParser.RelationalContext ctx) {
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
 

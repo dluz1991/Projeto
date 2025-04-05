@@ -1,12 +1,12 @@
 package CodeGenerator;
 
-import Calc.*;
+import Tuga.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TypeChecker extends CalcBaseVisitor<Void> {
+public class TypeChecker extends TugaBaseVisitor<Void> {
 
     // Guarda o tipo de cada nó
     private final Map<ParseTree, Tipo> types = new HashMap<>();
@@ -36,12 +36,12 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitProg(CalcParser.ProgContext ctx) {
+    public Void visitProg(TugaParser.ProgContext ctx) {
         return visitChildren(ctx);
     }
 
     @Override
-    public Void visitStat(CalcParser.StatContext ctx) {
+    public Void visitStat(TugaParser.StatContext ctx) {
         visit(ctx.expr());
         Tipo tipo = types.get(ctx.expr());
         if (tipo == Tipo.ERRO) {
@@ -51,7 +51,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitOr(CalcParser.OrContext ctx) {
+    public Void visitOr(TugaParser.OrContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -61,7 +61,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitAnd(CalcParser.AndContext ctx) {
+    public Void visitAnd(TugaParser.AndContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -71,7 +71,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitAddSub(CalcParser.AddSubContext ctx) {
+    public Void visitAddSub(TugaParser.AddSubContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -81,7 +81,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
+    public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -99,7 +99,7 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitRelational(CalcParser.RelationalContext ctx) {
+    public Void visitRelational(TugaParser.RelationalContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -115,14 +115,14 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitUnary(CalcParser.UnaryContext ctx) {
+    public Void visitUnary(TugaParser.UnaryContext ctx) {
         visit(ctx.expr());
         Tipo tipoExpr = types.get(ctx.expr());
-        if (ctx.op.getType() == CalcParser.MINUS) {
+        if (ctx.op.getType() == TugaParser.MINUS) {
             if (tipoExpr == Tipo.INT || tipoExpr == Tipo.REAL)
                 types.put(ctx, tipoExpr);
             else types.put(ctx, Tipo.ERRO);
-        } else if (ctx.op.getType() == CalcParser.NOT) {
+        } else if (ctx.op.getType() == TugaParser.NOT) {
             if (tipoExpr == Tipo.BOOL)
                 types.put(ctx, Tipo.BOOL);
             else types.put(ctx, Tipo.ERRO);
@@ -133,32 +133,32 @@ public class TypeChecker extends CalcBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitParens(CalcParser.ParensContext ctx) {
+    public Void visitParens(TugaParser.ParensContext ctx) {
         visit(ctx.expr());
         types.put(ctx, types.get(ctx.expr()));
         return null;
     }
 
     @Override
-    public Void visitInt(CalcParser.IntContext ctx) {
+    public Void visitInt(TugaParser.IntContext ctx) {
         types.put(ctx, Tipo.INT);
         return null;
     }
 
     @Override
-    public Void visitReal(CalcParser.RealContext ctx) {
+    public Void visitReal(TugaParser.RealContext ctx) {
         types.put(ctx, Tipo.REAL);
         return null;
     }
 
     @Override
-    public Void visitString(CalcParser.StringContext ctx) {
+    public Void visitString(TugaParser.StringContext ctx) {
         types.put(ctx, Tipo.STRING);
         return null;
     }
 
     @Override
-    public Void visitBool(CalcParser.BoolContext ctx) {
+    public Void visitBool(TugaParser.BoolContext ctx) {
         types.put(ctx, Tipo.BOOL);
         return null;
     }

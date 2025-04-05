@@ -7,15 +7,14 @@
  * Visit http://www.pragmaticprogrammer.com/titles/tpantlr2 for more book information.
  ***/
 
-import Calc.CalcBaseVisitor;
+import Tuga.TugaBaseVisitor;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
 
-import Calc.*;
+import Tuga.*;
 
 public class TestLEvalVisitor {
     // a4 -visitor Expr.g4
@@ -23,48 +22,48 @@ public class TestLEvalVisitor {
     /**
      * Visitor "calculator"
      */
-    public static class EvalVisitor extends CalcBaseVisitor<Integer> {
-        public Integer visitMulDiv(CalcParser.MulDivContext ctx) {
+    public static class EvalVisitor extends TugaBaseVisitor<Integer> {
+        public Integer visitMulDiv(TugaParser.MulDivContext ctx) {
             return visit(ctx.expr(0)) * visit(ctx.expr(1));
         }
 
-        public Integer visitAddSub(CalcParser.AddSubContext ctx) {
+        public Integer visitAddSub(TugaParser.AddSubContext ctx) {
             return visit(ctx.expr(0)) + visit(ctx.expr(1));
         }
 
-        public Integer visitInt(CalcParser.IntContext ctx) {
+        public Integer visitInt(TugaParser.IntContext ctx) {
             return Integer.valueOf(ctx.INT().getText());
         }
 
-        public Integer visitOr(CalcParser.OrContext ctx) {
+        public Integer visitOr(TugaParser.OrContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitBool(CalcParser.BoolContext ctx) {
+        public Integer visitBool(TugaParser.BoolContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitParens(CalcParser.ParensContext ctx) {
+        public Integer visitParens(TugaParser.ParensContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitAnd(CalcParser.AndContext ctx) {
+        public Integer visitAnd(TugaParser.AndContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitReal(CalcParser.RealContext ctx) {
+        public Integer visitReal(TugaParser.RealContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitRelational(CalcParser.RelationalContext ctx) {
+        public Integer visitRelational(TugaParser.RelationalContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitString(CalcParser.StringContext ctx) {
+        public Integer visitString(TugaParser.StringContext ctx) {
             return visitChildren(ctx);
         }
 
-        public Integer visitUnary(CalcParser.UnaryContext ctx) {
+        public Integer visitUnary(TugaParser.UnaryContext ctx) {
             return visitChildren(ctx);
         }
 
@@ -81,9 +80,9 @@ public class TestLEvalVisitor {
             if (inputFile != null) is = new FileInputStream(inputFile);
             CharStream input = CharStreams.fromStream(is);
 
-            CalcLexer lexer = new CalcLexer(input);
+            TugaLexer lexer = new TugaLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            CalcParser parser = new CalcParser(tokens);
+            TugaParser parser = new TugaParser(tokens);
             ParseTree tree = parser.prog();
 
 
@@ -92,11 +91,11 @@ public class TestLEvalVisitor {
             //
 
             MyErrorListener errorListener = new MyErrorListener(showLexerErrors, showParserErrors);
-            CalcLexer lexer1 = new CalcLexer(input);
+            TugaLexer lexer1 = new TugaLexer(input);
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
             CommonTokenStream tokens1 = new CommonTokenStream(lexer);
-            CalcParser parser1 = new CalcParser(tokens);
+            TugaParser parser1 = new TugaParser(tokens);
 
 
             parser.removeErrorListeners();
