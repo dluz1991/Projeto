@@ -14,7 +14,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     // stat: expr NEWLINE;
     @Override
-    public Void visitStat(CalcParser.StatContext ctx) {
+    public Void visitStat(TugaParser.StatContext ctx) {
         visit(ctx.expr());
         emit(OpCode.iprint);
         return null;
@@ -22,7 +22,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     // expr: '-' expr                          # Uminus
     @Override
-    public Void visitUminus(CalcParser.UminusContext ctx) {
+    public Void visitUnary(TugaParser.UnaryContext ctx) {
         visit(ctx.expr());
         emit(OpCode.iuminus);
         return null;
@@ -30,7 +30,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     // expr: expr op=('*'|'/') expr            # MulDiv
     @Override
-    public Void visitMulDiv(CalcParser.MulDivContext ctx) {
+    public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         if ("*".equals(ctx.op.getText())) emit(OpCode.imult);
@@ -41,7 +41,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     // expr: expr op=('+'|'-') expr            # AddSub
     @Override
-    public Void visitAddSub(CalcParser.AddSubContext ctx) {
+    public Void visitAddSub(TugaParser.AddSubContext ctx) {
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         if ("+".equals(ctx.op.getText())) emit(OpCode.iadd);
