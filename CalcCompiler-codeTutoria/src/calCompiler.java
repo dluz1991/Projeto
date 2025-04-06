@@ -3,7 +3,7 @@ import org.antlr.v4.runtime.tree.*;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import Calc.*;
+import Tuga.*;
 import CodeGenerator.*;
 
 public class calCompiler {
@@ -25,9 +25,9 @@ public class calCompiler {
         try {
             InputStream is = new FileInputStream(inputFilename);
             CharStream input = CharStreams.fromStream(is);
-            CalcLexer lexer = new CalcLexer(input);
+            TugaLexer lexer = new TugaLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            CalcParser parser = new CalcParser(tokens);
+            TugaParser parser = new TugaParser(tokens);
             ParseTree tree = parser.prog();
             int numParsingErrors = parser.getNumberOfSyntaxErrors();
             if (numParsingErrors != 0)

@@ -3,11 +3,11 @@ package CodeGenerator;
 import java.io.*;
 import java.util.*;
 
-import Calc.*;
+import Tuga.*;
 import VM.OpCode;
 import VM.Instruction.*;
 
-public class CodeGen extends CalcBaseVisitor<Void> {
+public class CodeGen extends TugaBaseVisitor<Void> {
 
     // the target code
     private final ArrayList<Instruction> code = new ArrayList<>();
@@ -52,7 +52,7 @@ public class CodeGen extends CalcBaseVisitor<Void> {
 
     // expr: INT                           # Int
     @Override
-    public Void visitInt(CalcParser.IntContext ctx) {
+    public Void visitInt(TugaParser.IntContext ctx) {
         emit(OpCode.iconst, Integer.valueOf(ctx.INT().getText()));
         return null;
     }
