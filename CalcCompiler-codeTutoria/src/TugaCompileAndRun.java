@@ -42,20 +42,46 @@ public class TugaCompileAndRun {
             // Fase de compilação
             InputStream is = new FileInputStream(inputFilename);
             CharStream input = CharStreams.fromStream(is);
+            // Lexer setup with error catching
             TugaLexer lexer = new TugaLexer(input);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            MyErrorListener errorListener = new MyErrorListener(false, false);
+
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(errorListener);
+
+            CommonTokenStream tokens;
+            try {
+                tokens = new CommonTokenStream(lexer);
+                tokens.fill();  // Force lexer to process all tokens to catch lexer exceptions here
+                if (errorListener.getNumLexerErrors() > 0) {
+                    System.out.println("Input has lexical errors");
+                    return;
+                }
+            } catch (RuntimeException lexException) {
+                System.out.println("Input has lexical errors");
+                return;
+            }
+
+// Parser setup
             TugaParser parser = new TugaParser(tokens);
+            parser.removeErrorListeners();
+            parser.addErrorListener(errorListener);
+
             ParseTree tree = parser.prog();
 
-            int numParsingErrors = parser.getNumberOfSyntaxErrors();
-            if (numParsingErrors != 0) {
-                System.out.println(inputFilename + " tem " + numParsingErrors + " erros sintáticos");
+            if (errorListener.getNumParsingErrors() > 0) {
+                System.out.println("Input has parsing errors");
                 return;
             }
 
             // Verificação de tipos
             TypeChecker checker = new TypeChecker();
             checker.visit(tree);
+            if (checker.getTypeErrorCount() > 0) {
+                // Found at least one type error => print the required message & stop
+                System.out.println("Input has type checking errors");
+                return;
+            }
 
             // Geração de bytecodes com constant pool
             ConstantPool constantPool = new ConstantPool();

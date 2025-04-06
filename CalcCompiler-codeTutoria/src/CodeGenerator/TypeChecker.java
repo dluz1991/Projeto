@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TypeChecker extends TugaBaseVisitor<Void> {
-
+    private int typeErrorCount = 0;
     // Guarda o tipo de cada nó
     private final Map<ParseTree, Tipo> types = new HashMap<>();
 
@@ -45,7 +45,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         visit(ctx.expr());
         Tipo tipo = types.get(ctx.expr());
         if (tipo == Tipo.ERRO) {
-            System.err.println("Erro de tipo na expressão.");
+            typeErrorCount++; // <--- increment here
         }
         return null;
     }
@@ -76,10 +76,16 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
         Tipo t2 = types.get(ctx.expr(1));
-        types.put(ctx, combinarTipos(t1, t2));
+        Tipo result = combinarTipos(t1, t2);
+        types.put(ctx, result);
         return null;
     }
 
+    // do the same wherever you do "Erro de tipo na expressão"
+
+    public int getTypeErrorCount() {
+        return typeErrorCount;
+    }
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         visit(ctx.expr(0));
