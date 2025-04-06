@@ -13,22 +13,24 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
-    private  ConstantPool constantPool = new ConstantPool();
+    private ConstantPool constantPool = new ConstantPool();
 
-    //___________BUILDERS
+    // ___________BUILDERS
     public CodeGen(TypeChecker checker, ConstantPool constantPool) {
         this.typeChecker = checker;
-        this.constantPool= constantPool;
+        this.constantPool = constantPool;
     }
+
     public CodeGen() {
         this.typeChecker = new TypeChecker();
     }
 
-    //____________VISITORS__________________
+    // ____________VISITORS__________________
     private void visitAndConvert(ParseTree expr, Tipo target) {
         visit(expr);
         Tipo origem = typeChecker.getTipo(expr);
-        if (origem != target) emitConversion(origem, target);
+        if (origem != target)
+            emitConversion(origem, target);
     }
 
     @Override
@@ -72,8 +74,10 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitBool(TugaParser.BoolContext ctx) {
-        if (ctx.getText().equals("verdadeiro")) emit(OpCode.tconst);
-        else if (ctx.getText().equals("falso")) emit(OpCode.fconst);
+        if (ctx.getText().equals("verdadeiro"))
+            emit(OpCode.tconst);
+        else if (ctx.getText().equals("falso"))
+            emit(OpCode.fconst);
         return null;
     }
 
@@ -96,12 +100,17 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx);
         if (ctx.op.getType() == TugaParser.MINUS) {
-            if (tipo == Tipo.INT) emit(OpCode.iuminus);
-            else if (tipo == Tipo.REAL) emit(OpCode.duminus);
-            else System.out.println("Erro: operação - inválida para tipo " + tipo);
+            if (tipo == Tipo.INT)
+                emit(OpCode.iuminus);
+            else if (tipo == Tipo.REAL)
+                emit(OpCode.duminus);
+            else
+                System.out.println("Erro: operação - inválida para tipo " + tipo);
         } else if (ctx.op.getType() == TugaParser.NOT) {
-            if (tipo == Tipo.BOOL) emit(OpCode.not);
-            else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
+            if (tipo == Tipo.BOOL)
+                emit(OpCode.not);
+            else
+                System.out.println("Erro: operação NOT inválida para tipo " + tipo);
         }
         return null;
     }
@@ -116,17 +125,21 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         }
         String op = ctx.op.getText();
         switch (tipo) {
-            case INT ->{
+            case INT -> {
                 visitAndConvert(ctx.expr(0), tipo);
                 visitAndConvert(ctx.expr(1), tipo);
-               if(op.equals("+")) emit(OpCode.iadd);
-               else if (op.equals("-")) emit(OpCode.isub);
+                if (op.equals("+"))
+                    emit(OpCode.iadd);
+                else if (op.equals("-"))
+                    emit(OpCode.isub);
             }
             case REAL -> {
                 visitAndConvert(ctx.expr(0), tipo);
                 visitAndConvert(ctx.expr(1), tipo);
-                if(op.equals("+")) emit(OpCode.dadd);
-                else if (op.equals("-")) emit(OpCode.dsub);
+                if (op.equals("+"))
+                    emit(OpCode.dadd);
+                else if (op.equals("-"))
+                    emit(OpCode.dsub);
             }
             case STRING -> {
                 if (op.equals("+")) {
@@ -192,22 +205,25 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
 
         Tipo tipoFinal;
-        if (t1 == Tipo.REAL || t2 == Tipo.REAL) tipoFinal = Tipo.REAL;
-        else if (t1 == Tipo.INT && t2 == Tipo.INT) tipoFinal = Tipo.INT;
-        else if (t1 == Tipo.STRING && t2 == Tipo.STRING) tipoFinal = Tipo.STRING;
-        else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL) tipoFinal = Tipo.BOOL;
+        if (t1 == Tipo.REAL || t2 == Tipo.REAL)
+            tipoFinal = Tipo.REAL;
+        else if (t1 == Tipo.INT && t2 == Tipo.INT)
+            tipoFinal = Tipo.INT;
+        else if (t1 == Tipo.STRING && t2 == Tipo.STRING)
+            tipoFinal = Tipo.STRING;
+        else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL)
+            tipoFinal = Tipo.BOOL;
         else {
             System.err.println("Tipos incompatíveis em Relational");
             return null;
         }
-
 
         String op = ctx.op.getText();
 
         switch (tipoFinal) {
             case INT: {
                 switch (op) {
-                    //Trocar a ordem das visitas para evitar conversões desnecessárias
+                    // Trocar a ordem das visitas para evitar conversões desnecessárias
                     // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
                     case "<":
                         visitAndConvert(ctx.expr(0), tipoFinal);
@@ -246,7 +262,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             }
             case REAL: {
                 switch (op) {
-                    //Trocar a ordem das visitas para evitar conversões desnecessárias
+                    // Trocar a ordem das visitas para evitar conversões desnecessárias
                     // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
                     case "<":
                         visitAndConvert(ctx.expr(0), tipoFinal);
@@ -309,29 +325,33 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-
     private void erroOpRel(String op) {
         System.err.println("Operação relacional inválida: " + op);
     }
 
     private void emitConversion(Tipo de, Tipo para) {
-        if (de == para) return;
+        if (de == para)
+            return;
         switch (de) {
             case INT -> {
-                if (para == Tipo.REAL) emit(OpCode.itod);
-                else if (para == Tipo.STRING) emit(OpCode.itos);
+                if (para == Tipo.REAL)
+                    emit(OpCode.itod);
+                else if (para == Tipo.STRING)
+                    emit(OpCode.itos);
             }
             case REAL -> {
-                if (para == Tipo.STRING) emit(OpCode.dtos);
+                if (para == Tipo.STRING)
+                    emit(OpCode.dtos);
             }
             case BOOL -> {
-                if (para == Tipo.STRING) emit(OpCode.btos);
+                if (para == Tipo.STRING)
+                    emit(OpCode.btos);
             }
             default -> System.err.println("Conversão não suportada: " + de + " -> " + para);
         }
     }
 
-    //METODOS AUXILIARES
+    // METODOS AUXILIARES
     public void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
@@ -350,7 +370,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         try (DataOutputStream dout = new DataOutputStream(new FileOutputStream(filename))) {
             for (Instruction inst : code)
                 inst.writeTo(dout);
-            System.out.println("Saving the bytecodes to " + filename);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -360,21 +379,22 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return code;
     }
 
-    /*private int addToConstantPool(Object value) {
-        int index = constantPool.indexOf(value);
-        if (index != -1) {
-            return index;
-        }
-        constantPool.add(value);
-        return constantPool.size() - 1;
-    }
-
-    public Object getConstant(int index) {
-        if (index >= 0 && index < constantPool.size()) {
-            return constantPool.get(index);
-        }
-        return null;
-    }
-*/
+    /*
+     * private int addToConstantPool(Object value) {
+     * int index = constantPool.indexOf(value);
+     * if (index != -1) {
+     * return index;
+     * }
+     * constantPool.add(value);
+     * return constantPool.size() - 1;
+     * }
+     * 
+     * public Object getConstant(int index) {
+     * if (index >= 0 && index < constantPool.size()) {
+     * return constantPool.get(index);
+     * }
+     * return null;
+     * }
+     */
 
 }

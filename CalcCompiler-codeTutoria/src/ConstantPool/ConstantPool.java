@@ -55,7 +55,7 @@ public class ConstantPool {
             if (obj instanceof String) {
                 System.out.printf("%d: \"%s\"%n", i, obj);
             } else if (obj instanceof Double) {
-                System.out.printf(Locale.US,"%d: %.1f%n", i, obj);
+                System.out.printf(Locale.US, "%d: %s%n", i, obj);
             }
         }
     }

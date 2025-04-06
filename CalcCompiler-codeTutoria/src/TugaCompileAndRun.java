@@ -15,36 +15,36 @@ public class TugaCompileAndRun {
     static boolean trace;
 
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Uso: java calCompiler <ficheiro>.tuga [-asm] [-run]");
-            System.exit(0);
-        }
-        //Flags para mostrar erros
-        boolean showLexerErrors = false; //Mensagem de erro "Input has lexical errors"
-        boolean showParserErrors = false;   //Mensagem de erro "Input has parsing errors"
-        boolean showTypeCheckingErrors = false; //Mensagem de erro"Input has type checking errors"
-        //Após mensagem de erro é suposto o programa terminar
+        boolean showLexerErrors = false;
+        boolean showParserErrors = false;
+        boolean showTypeCheckingErrors = false;
 
-
-        String inputFilename = args[0];
         showAsm = contains(args, "-asm");
         runAfterCompile = contains(args, "-run");
         trace = contains(args, "-trace");
 
-        if (!inputFilename.endsWith(".tuga")) {
-            System.out.println("O ficheiro deve ter a extensão '.tuga'");
-            System.exit(0);
+        InputStream is = System.in;
+        String outputFilename = "bytecodes.bc";
+
+        if (args.length >= 1 && !args[0].startsWith("-")) {
+            String inputFilename = args[0];
+            if (!inputFilename.endsWith(".tuga")) {
+                System.out.println("O ficheiro deve ter a extensão '.tuga'");
+                System.exit(0);
+            }
+            outputFilename = inputFilename.replace(".tuga", ".bc");
+            try {
+                is = new FileInputStream(inputFilename);
+            } catch (FileNotFoundException e) {
+                System.out.println("File not found: " + inputFilename);
+                return;
+            }
         }
 
-        String outputFilename = inputFilename.replace(".tuga", ".bc");
-
         try {
-            // Fase de compilação
-            InputStream is = new FileInputStream(inputFilename);
             CharStream input = CharStreams.fromStream(is);
-            // Lexer setup with error catching
             TugaLexer lexer = new TugaLexer(input);
-            MyErrorListener errorListener = new MyErrorListener(false, false);
+            MyErrorListener errorListener = new MyErrorListener(showLexerErrors, showParserErrors);
 
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
@@ -52,17 +52,17 @@ public class TugaCompileAndRun {
             CommonTokenStream tokens;
             try {
                 tokens = new CommonTokenStream(lexer);
-                tokens.fill();  // Force lexer to process all tokens to catch lexer exceptions here
-                if (errorListener.getNumLexerErrors() > 0) {
-                    System.out.println("Input has lexical errors");
-                    return;
-                }
+                tokens.fill();
             } catch (RuntimeException lexException) {
                 System.out.println("Input has lexical errors");
                 return;
             }
 
-// Parser setup
+            if (errorListener.getNumLexerErrors() > 0) {
+                System.out.println("Input has lexical errors");
+                return;
+            }
+
             TugaParser parser = new TugaParser(tokens);
             parser.removeErrorListeners();
             parser.addErrorListener(errorListener);
@@ -74,27 +74,22 @@ public class TugaCompileAndRun {
                 return;
             }
 
-            // Verificação de tipos
             TypeChecker checker = new TypeChecker();
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
-                // Found at least one type error => print the required message & stop
                 System.out.println("Input has type checking errors");
                 return;
             }
 
-            // Geração de bytecodes com constant pool
             ConstantPool constantPool = new ConstantPool();
             CodeGen codeGen = new CodeGen(checker, constantPool);
             codeGen.visit(tree);
             codeGen.saveBytecodes(outputFilename);
-//_______PRINT_CONSTANTS___________
+
             constantPool.printConstants();
             codeGen.dumpCode();
 
-
-            // Execução na VM (opcional)
-            if (runAfterCompile) {
+            if (runAfterCompile || args.length == 0) {
                 byte[] bytecodes = loadBytecodes(outputFilename);
                 VirtualMachine vm = new VirtualMachine(bytecodes, trace, constantPool);
                 vm.run();
@@ -104,6 +99,8 @@ public class TugaCompileAndRun {
             System.out.println("Erro ao ler o ficheiro: " + e.getMessage());
         }
     }
+
+
 
     public static boolean contains(String[] args, String flag) {
         for (String arg : args) {
