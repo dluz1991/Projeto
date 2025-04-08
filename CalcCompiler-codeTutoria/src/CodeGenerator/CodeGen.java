@@ -233,7 +233,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                     case ">":
                         visitAndConvert(ctx.expr(1), tipoFinal);
                         visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ileq);
+                        emit(OpCode.ilt);
                         break;
                     case "<=":
                         visitAndConvert(ctx.expr(0), tipoFinal);
@@ -243,7 +243,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                     case ">=":
                         visitAndConvert(ctx.expr(1), tipoFinal);
                         visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ilt);
+                        emit(OpCode.ileq);
                         break;
                     case "igual":
                         visitAndConvert(ctx.expr(0), tipoFinal);
@@ -272,7 +272,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                     case ">":
                         visitAndConvert(ctx.expr(1), tipoFinal);
                         visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dleq);
+                        emit(OpCode.dlt);
                         break;
                     case "<=":
                         visitAndConvert(ctx.expr(0), tipoFinal);
@@ -282,7 +282,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                     case ">=":
                         visitAndConvert(ctx.expr(1), tipoFinal);
                         visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dlt);
+                        emit(OpCode.dleq);
                         break;
                     case "igual":
                         visitAndConvert(ctx.expr(0), tipoFinal);
