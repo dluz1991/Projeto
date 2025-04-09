@@ -2,7 +2,7 @@ grammar Tuga;
 
 prog   : stat+ EOF;
 
-stat   : 'escreve' expr SCOMMA NEWLINE;
+stat   : 'escreve' expr SCOMMA;
 
 
 expr   :op=(MINUS|NOT) expr              # Unary
@@ -40,9 +40,9 @@ STRING   : '"' .*? '"' ;
 BOOL     : 'verdadeiro' | 'falso' ;
 SCOMMA   : ';' ;
 SL_COMMENT : '//' .*? (EOF|'\n') -> skip; // single-line comment
-ML_COMMENT : '/*' .*? '*/'NEWLINE* -> skip ; // multi-line comment
-NEWLINE  : '\r'? '\n' ;
-WS       : [ \t\r\n]+ -> skip ;
+ML_COMMENT : '/*' .*? '*/' -> skip ; // multi-line comment
+
+WS         : [ \t\r\n]+ -> skip ;
 
 
 
