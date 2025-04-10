@@ -12,7 +12,7 @@ expr   :op=(MINUS|NOT) expr              # Unary
        | expr op=AND expr             # And
        | expr op=OR expr              # Or
        |LPAREN expr RPAREN             # Parens
-       | INT                        # Int
+       |INT                        # Int
        |REAL                        # Real
        |STRING                      # String
        |BOOL                        # Bool

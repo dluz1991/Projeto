@@ -9,6 +9,11 @@ import java.io.*;
 
 import Tuga.*;
 
+/**
+ * This is the main class for the Tuga compiler and virtual machine.
+ * It compiles Tuga source code to bytecode and runs it on a virtual machine.
+ * The program accepts command line arguments for input file, output file, and flags for showing bytecode and running after compilation.
+ */
 public class TugaCompileAndRun {
     static boolean showAsm; // flag para mostrar bytecode gerado
     static boolean runAfterCompile;
@@ -17,8 +22,10 @@ public class TugaCompileAndRun {
     public static void main(String[] args) {
         boolean showLexerErrors = false;
         boolean showParserErrors = false;
-        boolean showTypeCheckingErrors = false;
 
+/**
+ * Parse command line arguments
+ */
         showAsm = contains(args, "-asm");
         runAfterCompile = contains(args, "-run");
         trace = contains(args, "-trace");
@@ -100,8 +107,13 @@ public class TugaCompileAndRun {
         }
     }
 
-
-
+    /**
+     * Check if the command line arguments contain a specific flag.
+     *
+     * @param args the command line arguments
+     * @param flag the flag to check for
+     * @return true if the flag is present, false otherwise
+     */
     public static boolean contains(String[] args, String flag) {
         for (String arg : args) {
             if (arg.equals(flag)) return true;
@@ -109,6 +121,13 @@ public class TugaCompileAndRun {
         return false;
     }
 
+    /**
+     * Load bytecode from a file.
+     *
+     * @param filename the name of the file to load
+     * @return the bytecode as a byte array
+     * @throws IOException if an I/O error occurs
+     */
     public static byte[] loadBytecodes(String filename) throws IOException {
         File file = new File(filename);
         byte[] bytecodes = new byte[(int) file.length()];

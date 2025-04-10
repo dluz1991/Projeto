@@ -20,7 +20,8 @@ public class TestLEvalVisitor {
     // a4 -visitor Expr.g4
 
     /**
-     * Visitor "calculator"
+     * This is a simple visitor that evaluates arithmetic expressions.
+     * It assumes that the input is a valid expression.
      */
     public static class EvalVisitor extends TugaBaseVisitor<Integer> {
         public Integer visitMulDiv(TugaParser.MulDivContext ctx) {
@@ -83,24 +84,14 @@ public class TestLEvalVisitor {
             TugaLexer lexer = new TugaLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             TugaParser parser = new TugaParser(tokens);
-            ParseTree tree = parser.prog();
-
-
-            //
-            // add my own error listener
-            //
-
             MyErrorListener errorListener = new MyErrorListener(showLexerErrors, showParserErrors);
-            TugaLexer lexer1 = new TugaLexer(input);
+
+            ParseTree tree = parser.prog();
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
-            CommonTokenStream tokens1 = new CommonTokenStream(lexer);
-            TugaParser parser1 = new TugaParser(tokens);
-
-
+            
             parser.removeErrorListeners();
             parser.addErrorListener(errorListener);
-            ParseTree tree1 = parser.prog();
 
             if (errorListener.getNumLexerErrors() > 0) {
                 System.out.println("Input has lexical errors");
