@@ -17,11 +17,53 @@ public interface TugaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitProg(TugaParser.ProgContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link TugaParser#stat}.
+	 * Visit a parse tree produced by {@link TugaParser#varDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitStat(TugaParser.StatContext ctx);
+	T visitVarDeclaration(TugaParser.VarDeclarationContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Afetacao}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAfetacao(TugaParser.AfetacaoContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Bloco}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBloco(TugaParser.BlocoContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Equanto}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEquanto(TugaParser.EquantoContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Se}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSe(TugaParser.SeContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Escreve}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEscreve(TugaParser.EscreveContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Vazia}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVazia(TugaParser.VaziaContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code Or}
 	 * labeled alternative in {@link TugaParser#expr}.
@@ -57,6 +99,13 @@ public interface TugaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitParens(TugaParser.ParensContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Var}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVar(TugaParser.VarContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code And}
 	 * labeled alternative in {@link TugaParser#expr}.

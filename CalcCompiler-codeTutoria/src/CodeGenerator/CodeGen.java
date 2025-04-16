@@ -64,14 +64,82 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         emit(OpCode.halt);
         return null;
     }
-
     /**
      * Visita o nó de Stat e gera o bytecode correspondente.
      *
      * @param ctx O contexto do nó de atribuição.
      * @return null
      */
-    @Override
+    @Override public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) { return visitChildren(ctx); }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitAfetacao(TugaParser.AfetacaoContext ctx) { return visitChildren(ctx); }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitBloco(TugaParser.BlocoContext ctx) { return visitChildren(ctx); }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitEquanto(TugaParser.EquantoContext ctx) { return visitChildren(ctx); }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitSe(TugaParser.SeContext ctx) {
+        return visitChildren(ctx); }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitEscreve(TugaParser.EscreveContext ctx) {
+        visit(ctx.expr());
+        Tipo tipo = typeChecker.getTipo(ctx.expr());
+        if (tipo == Tipo.ERRO) {
+            System.err.println("Erro de tipo na expressão.");
+            return null;
+        }
+        switch (tipo) {
+            case INT -> emit(OpCode.iprint);
+            case REAL -> emit(OpCode.dprint);
+            case BOOL -> emit(OpCode.bprint);
+            case STRING -> emit(OpCode.sprint);
+            default -> System.err.println("Tipo invalido para impressao.");
+        }
+        return null;
+    }
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     */
+    @Override public Void visitVazia(TugaParser.VaziaContext ctx) {
+
+        return visitChildren(ctx);
+    }
+    /**
+     * Visita o nó de Stat e gera o bytecode correspondente.
+     *
+     * @param ctx O contexto do nó de atribuição.
+     * @return null
+     */
+
+   /* @Override
     public Void visitStat(TugaParser.StatContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx.expr());
@@ -88,7 +156,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         }
         return null;
     }
-
+*/
     /**
      * Visita o nó de Inteiros e gera o bytecode correspondente.
      *
