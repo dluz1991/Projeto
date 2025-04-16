@@ -130,7 +130,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      */
     @Override public Void visitVazia(TugaParser.VaziaContext ctx) {
 
-        return visitChildren(ctx);
+        return null; //retorna null ou continua a visitar a arvore e depois devolve o erro?
     }
     /**
      * Visita o nó de Stat e gera o bytecode correspondente.
