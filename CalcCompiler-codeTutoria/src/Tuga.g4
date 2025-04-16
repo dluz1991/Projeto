@@ -1,23 +1,36 @@
 grammar Tuga;
 
-prog   : stat+ EOF;
+prog   : varDeclaration stats EOF;
 
-stat   : 'escreve' expr SCOMMA;
+varDeclaration: declaration*;
 
+declaration: ID(','ID)* ':' TYPE? SCOMMA;
 
-expr   :op=(MINUS|NOT) expr              # Unary
-       | expr op=(TIMES|DIV|REMAINDER) expr # MulDiv
-       | expr op=(PLUS|MINUS) expr          # AddSub
-       | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
-       | expr op=AND expr             # And
-       | expr op=OR expr              # Or
-       |LPAREN expr RPAREN             # Parens
-       |INT                        # Int
-       |REAL                        # Real
-       |STRING                      # String
-       |BOOL                        # Bool
+stats : stat*;
+stat   : ID '<-' expr SCOMMA                           # Afetacao
+       | 'inicio' stat* 'fim'                          # Bloco
+       | 'enquanto' LPAREN expr RPAREN stat+ 'fim'     # Equanto
+       | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
+       | 'escreve' expr SCOMMA                         # Escreve
+       | SCOMMA                                        # Vazia
        ;
 
+
+expr   :op=(MINUS|NOT) expr                                                 # Unary
+       | expr op=(TIMES|DIV|REMAINDER) expr                                 # MulDiv
+       | expr op=(PLUS|MINUS) expr                                          # AddSub
+       | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
+       | expr op=AND expr                                                   # And
+       | expr op=OR expr                                                    # Or
+       |LPAREN expr RPAREN                                                  # Parens
+       |ID                                                                  # Var
+       |INT                                                                 # Int
+       |REAL                                                                # Real
+       |STRING                                                              # String
+       |BOOL                                                                # Bool
+       ;
+
+TYPE    : INT|REAL|STRING|BOOL;
 LPAREN  : '(' ;
 RPAREN  : ')' ;
 PLUS    : '+' ;
@@ -34,6 +47,7 @@ DIFFERENT : 'diferente' ;
 AND     : 'e' ;
 OR : 'ou' ;
 NOT : 'nao' ;
+ID: [a-zA-Z_][a-zA-Z_0-9]*;
 INT      : DIGIT+ ;
 REAL     : DIGIT+ '.' DIGIT+ ;
 STRING   : '"' .*? '"' ;
