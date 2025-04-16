@@ -9,7 +9,7 @@ declaration: ID(','ID)* ':' TYPE? SCOMMA;
 stats : stat*;
 stat   : ID '<-' expr SCOMMA                           # Afetacao
        | 'inicio' stat* 'fim'                          # Bloco
-       | 'enquanto' LPAREN expr RPAREN stat+ 'fim'     # Equanto
+       | 'enquanto' LPAREN expr RPAREN stat+    # Equanto
        | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
        | 'escreve' expr SCOMMA                         # Escreve
        | SCOMMA                                        # Vazia
@@ -30,7 +30,7 @@ expr   :op=(MINUS|NOT) expr                                                 # Un
        |BOOL                                                                # Bool
        ;
 
-TYPE    : INT|REAL|STRING|BOOL;
+TYPE    :'inteiro' | 'real' | 'string' | 'booleano' ;
 LPAREN  : '(' ;
 RPAREN  : ')' ;
 PLUS    : '+' ;
