@@ -1,0 +1,14 @@
+i: inteiro;
+flag: booleano;
+i <- 0;
+flag <- verdadeiro;
+enquanto (i < 3)
+inicio
+escreve i;
+se (flag)
+inicio
+escreve "flag está ativa";
+flag <- falso;
+fim
+i <- i + 1;
+fim

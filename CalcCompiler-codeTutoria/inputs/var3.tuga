@@ -1,0 +1,9 @@
+val: booleano;
+x, y: inteiro;
+x <- 10;
+y <- 20;
+val <- verdadeiro;
+se (x < y e val)
+escreve "x é menor e val é verdadeiro";
+senao
+escreve "condição falsa";
