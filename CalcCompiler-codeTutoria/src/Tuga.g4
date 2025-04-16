@@ -1,15 +1,12 @@
 grammar Tuga;
 
-prog   : varDeclaration stats EOF;
+prog   : varDeclaration* stat+ EOF;
 
-varDeclaration: declaration*;
+varDeclaration: ID(','ID)* ':' TYPE? SCOMMA;
 
-declaration: ID(','ID)* ':' TYPE? SCOMMA;
-
-stats : stat+;
 stat   : ID '<-' expr SCOMMA                           # Afetacao
        | 'inicio' stat* 'fim'                          # Bloco
-       | 'enquanto' LPAREN expr RPAREN stat+    # Equanto
+       | 'enquanto' LPAREN expr RPAREN stat+           # Equanto
        | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
        | 'escreve' expr SCOMMA                         # Escreve
        | SCOMMA                                        # Vazia
