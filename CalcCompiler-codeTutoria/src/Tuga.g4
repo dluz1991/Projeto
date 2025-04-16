@@ -6,7 +6,7 @@ varDeclaration: declaration*;
 
 declaration: ID(','ID)* ':' TYPE? SCOMMA;
 
-stats : stat*;
+stats : stat+;
 stat   : ID '<-' expr SCOMMA                           # Afetacao
        | 'inicio' stat* 'fim'                          # Bloco
        | 'enquanto' LPAREN expr RPAREN stat+    # Equanto

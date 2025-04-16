@@ -1,0 +1,15 @@
+x, y, soma: inteiro;
+b: booleano;
+x <- 4;
+enquanto (x < 10)
+inicio
+escreve x;
+x <- x+1;
+fim
+se (x < 10)
+escreve "ola";
+senao
+inicio
+escreve x;
+x <- x+1;
+fim

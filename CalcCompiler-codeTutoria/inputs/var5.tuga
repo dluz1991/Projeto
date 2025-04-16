@@ -1,0 +1,11 @@
+nome: string;
+idade: inteiro;
+maior: booleano;
+nome <- "Joana";
+idade <- 21;
+maior <- idade >= 18;
+se (maior)
+inicio
+escreve nome;
+escreve "é maior de idade";
+fim
