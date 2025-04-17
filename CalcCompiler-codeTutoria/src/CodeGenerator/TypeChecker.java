@@ -1,8 +1,9 @@
 package CodeGenerator;
 
+import TabelaSimbolos.TabelaSimbolos;
 import Tuga.*;
 import org.antlr.v4.runtime.tree.ParseTree;
-
+import TabelaSimbolos.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import java.util.Map;
  * Extende a classe TugaBaseVisitor para visitar os nós da árvore.
  */
 public class TypeChecker extends TugaBaseVisitor<Void> {
+    TabelaSimbolos tabelaSimbolos;
     /**
      * Contador de erros de tipo encontrados durante a verificação.
      * Inicializado em 0 e incrementado sempre que um erro de tipo é encontrado.
@@ -20,6 +22,10 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      * Mapa que associa cada nó da árvore de sintaxe a seu tipo correspondente.
      */
     private final Map<ParseTree, Tipo> types = new HashMap<>();
+
+    public TypeChecker(TabelaSimbolos tabelaSimbolos) {
+        this.tabelaSimbolos = tabelaSimbolos;
+    }
 
     /**
      * Método responsável por combinar dois tipos.
@@ -62,21 +68,111 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+
         return visitChildren(ctx);
     }
 
-    /**
-     * Método responsável por visitar um nó de declaração.
-     * Chama o método visit para visitar a expressão contida na declaração.
-     * Aceita os tipos INT, REAL, STRING e BOOL.
-     *
-     * @param ctx nó de declaração.
-     * @return null
-     */
     @Override
-    public Void visitStat(TugaParser.StatContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+    public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+        Tipo tipo = Tipo.INT; // default
+
+        if (ctx.TYPE() != null) {
+            String tipoTexto = ctx.TYPE().getText();
+            tipo = switch (tipoTexto) {
+                case "inteiro" -> Tipo.INT;
+                case "real" -> Tipo.REAL;
+                case "string" -> Tipo.STRING;
+                case "booleano" -> Tipo.BOOL;
+                default -> Tipo.ERRO;
+            };
+        }
+
+        for (var id : ctx.ID()) {
+            String nome = id.getText();
+            tabelaSimbolos.putSimbolo(nome, tipo);
+
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+
+        String nomeVar = ctx.ID().getText();
+        ValorSimbolo entrada = tabelaSimbolos.getSimbolo(nomeVar);
+
+        if (entrada == null) {
+            System.err.printf("Erro: variável \"%s\" não foi declarada.%n", nomeVar);
+            typeErrorCount++;
+            return null;
+        }
+
+        visit(ctx.expr());
+        Tipo tipoExpr = types.getOrDefault(ctx.expr(), Tipo.ERRO);
+
+        if (entrada.getTipo() != tipoExpr && !(entrada.getTipo() == Tipo.REAL && tipoExpr == Tipo.INT)) {
+            System.err.printf("Erro: atribuição inválida para a variável \"%s\". Esperado: %s, encontrado: %s%n",
+                    nomeVar, entrada.getIndex(), tipoExpr);
+            typeErrorCount++;
+        }
+
+        return null;
+    }
+
+
+    @Override
+    public Void visitBloco(TugaParser.BlocoContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitEquanto(TugaParser.EquantoContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+
+        visit(ctx.expr());
+        Tipo tipoCond = types.getOrDefault(ctx.expr(), Tipo.ERRO);
+
+        if (tipoCond != Tipo.BOOL) {
+            System.err.println("Erro: a condição de \"enquanto\" deve ser do tipo booleano.");
+            typeErrorCount++;
+        }
+
+        for (var stmt : ctx.stat()) {
+            visit(stmt);
+        }
+
+        return null;
+    }
+
+
+    @Override
+    public Void visitSe(TugaParser.SeContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+
+        visit(ctx.expr());
+        Tipo tipoCond = types.getOrDefault(ctx.expr(), Tipo.ERRO);
+
+        if (tipoCond != Tipo.BOOL) {
+            System.err.println("Erro: a condição de \"se\" deve ser do tipo booleano.");
+            typeErrorCount++;
+        }
+
+        visit(ctx.stat(0)); // ramo "então"
+        if (ctx.stat().size() > 1) {
+            visit(ctx.stat(1)); // ramo "senao"
+        }
+
+        return null;
+    }
+
+
+    @Override
+    public Void visitEscreve(TugaParser.EscreveContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr());
         Tipo tipo = types.get(ctx.expr());
         if (tipo == Tipo.ERRO) {
@@ -84,6 +180,13 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         }
         return null;
     }
+
+    @Override
+    public Void visitVazia(TugaParser.VaziaContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+        return null;
+    }
+
 
     /**
      * Método responsável por visitar um nó de atribuição.
@@ -95,7 +198,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitOr(TugaParser.OrContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -114,7 +217,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitAnd(TugaParser.AndContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -134,7 +237,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -155,7 +258,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -182,7 +285,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitRelational(TugaParser.RelationalContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr(0));
         visit(ctx.expr(1));
         Tipo t1 = types.get(ctx.expr(0));
@@ -208,7 +311,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitUnary(TugaParser.UnaryContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr());
         Tipo tipoExpr = types.get(ctx.expr());
         if (ctx.op.getType() == TugaParser.MINUS) {
@@ -233,7 +336,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitParens(TugaParser.ParensContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         visit(ctx.expr());
         types.put(ctx, types.get(ctx.expr()));
         return null;
@@ -250,7 +353,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitInt(TugaParser.IntContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         types.put(ctx, Tipo.INT);
         return null;
     }
@@ -266,7 +369,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitReal(TugaParser.RealContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         types.put(ctx, Tipo.REAL);
         return null;
     }
@@ -282,7 +385,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitString(TugaParser.StringContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         types.put(ctx, Tipo.STRING);
         return null;
     }
@@ -298,7 +401,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitBool(TugaParser.BoolContext ctx) {
-        if (getTypeErrorCount()> 0) return null;
+        if (getTypeErrorCount() > 0) return null;
         types.put(ctx, Tipo.BOOL);
         return null;
     }
