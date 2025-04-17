@@ -64,49 +64,70 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         emit(OpCode.halt);
         return null;
     }
+
     /**
      * Visita o nó de Stat e gera o bytecode correspondente.
      *
      * @param ctx O contexto do nó de atribuição.
      * @return null
      */
-    @Override public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) { return visitChildren(ctx); }
+    @Override
+    public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
+        return visitChildren(ctx);
+    }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitAfetacao(TugaParser.AfetacaoContext ctx) { return visitChildren(ctx); }
+    @Override
+    public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
+        return visitChildren(ctx);
+    }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitBloco(TugaParser.BlocoContext ctx) { return visitChildren(ctx); }
+    @Override
+    public Void visitBloco(TugaParser.BlocoContext ctx) {
+        return visitChildren(ctx);
+    }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitEquanto(TugaParser.EquantoContext ctx) { return visitChildren(ctx); }
+    @Override
+    public Void visitEquanto(TugaParser.EquantoContext ctx) {
+        return visitChildren(ctx);
+    }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitSe(TugaParser.SeContext ctx) {
-        return visitChildren(ctx); }
+    @Override
+    public Void visitSe(TugaParser.SeContext ctx) {
+        return visitChildren(ctx);
+    }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitEscreve(TugaParser.EscreveContext ctx) {
+    @Override
+    public Void visitEscreve(TugaParser.EscreveContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx.expr());
         if (tipo == Tipo.ERRO) {
@@ -122,16 +143,25 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         }
         return null;
     }
+
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public Void visitVazia(TugaParser.VaziaContext ctx) {
+    @Override
+    public Void visitVazia(TugaParser.VaziaContext ctx) {
 
         return null; //retorna null ou continua a visitar a arvore e depois devolve o erro?
     }
+
+    @Override
+    public Void visitVar(TugaParser.VarContext ctx) {
+
+        return null;
+    }
+
     /**
      * Visita o nó de Stat e gera o bytecode correspondente.
      *
@@ -157,6 +187,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 */
+
     /**
      * Visita o nó de Inteiros e gera o bytecode correspondente.
      *
@@ -513,6 +544,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
+
     /**
      * Emite uma instrução de bytecode com um argumento.
      *
