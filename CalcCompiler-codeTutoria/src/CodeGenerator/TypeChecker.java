@@ -186,6 +186,23 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         if (getTypeErrorCount() > 0) return null;
         return null;
     }
+    @Override
+    public Void visitVar(TugaParser.VarContext ctx) {
+        if (getTypeErrorCount() > 0) return null;
+
+        String nome = ctx.ID().getText();
+        ValorSimbolo entrada = tabelaSimbolos.getSimbolo(nome);
+
+        if (entrada == null) {
+            System.err.printf("Erro: variável \"%s\" não foi declarada.%n", nome);
+            types.put(ctx, Tipo.ERRO);
+            typeErrorCount++;
+        } else {
+            types.put(ctx, entrada.getTipo());
+        }
+
+        return null;
+    }
 
 
     /**
