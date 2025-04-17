@@ -1,6 +1,7 @@
 import CodeGenerator.CodeGen;
 import ConstantPool.ConstantPool;
 import CodeGenerator.TypeChecker;
+import TabelaSimbolos.TabelaSimbolos;
 import VM.VirtualMachine;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -69,7 +70,7 @@ public class TugaCompileAndRun {
                 System.out.println("Input has lexical errors");
                 return;
             }
-
+            TabelaSimbolos tabelaSimbolos= new TabelaSimbolos();
             TugaParser parser = new TugaParser(tokens);
             parser.removeErrorListeners();
             parser.addErrorListener(errorListener);
@@ -81,7 +82,7 @@ public class TugaCompileAndRun {
                 return;
             }
 
-            TypeChecker checker = new TypeChecker();
+            TypeChecker checker = new TypeChecker(tabelaSimbolos);
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
                 System.out.println("Input has type checking errors");
