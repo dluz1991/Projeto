@@ -7,12 +7,18 @@ public class ValorSimbolo {
     private final int index; // endereco na memoria
 
     public ValorSimbolo(Tipo tipo, int endereco) {
-        this.tipo = tipo;
+        if (tipo == null) {
+            this.tipo = Tipo.NULL;
+        } else {
+            this.tipo = tipo;
+        }
         this.index = endereco;
     }
+
     public Tipo getTipo() {
         return tipo;
     }
+
     public int getIndex() {
         return index;
     }

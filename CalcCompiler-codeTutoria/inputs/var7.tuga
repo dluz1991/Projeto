@@ -5,4 +5,4 @@ inicio
 escreve i;
 i <- i + 1;
 fim
-escreve "tchau"
+escreve "tchau";

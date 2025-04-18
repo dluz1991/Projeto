@@ -85,7 +85,7 @@ public class TugaCompileAndRun {
             TypeChecker checker = new TypeChecker(tabelaSimbolos);
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
-                System.out.println("Input has type checking errors");
+         //       System.out.println("Input has type checking errors");
                 return;
             }
 
@@ -93,8 +93,10 @@ public class TugaCompileAndRun {
             CodeGen codeGen = new CodeGen(checker, constantPool, tabelaSimbolos);
             codeGen.visit(tree);
             codeGen.saveBytecodes(outputFilename);
+           // System.out.println(tree.toStringTree(parser));
 
             constantPool.printConstants();
+
             codeGen.dumpCode();
 
             if (runAfterCompile || args.length == 0) {
