@@ -1,15 +1,10 @@
-x, y, soma: inteiro;
+x,y,soma: inteiro;
 b: booleano;
-x <- 4;
-enquanto (x < 10)
-inicio
+r: real;
+s: string;
+b <- 99;
+r <- 3;
+s <- 88;
+x <- 33;
+x <- 3.14;
 escreve x;
-x <- x+1;
-fim
-se (x < 10)
-escreve "ola";
-senao
-inicio
-escreve x;
-x <- x+1;
-fim

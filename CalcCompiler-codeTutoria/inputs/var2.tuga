@@ -1,12 +1,3 @@
-a, b, total: inteiro;
-cond: booleano;
-a <- 0;
-b <- 5;
-total <- a + b;
-enquanto (a < b)
-inicio
-escreve total;
-a <- a + 1;
-fim
-se (total > 5)
-escreve "maior que 5";
+x,y,soma,y: inteiro;
+b,x: booleano;
+escreve 5;

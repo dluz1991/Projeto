@@ -1,6 +1,7 @@
 package VM;
 
 import ConstantPool.ConstantPool;
+import TabelaSimbolos.TabelaSimbolos;
 import VM.Instruction.*;
 
 import java.util.*;
@@ -20,19 +21,25 @@ public class VirtualMachine {
     private int IP;                    // instruction pointer
     private Stack<Object> stack = new Stack<>();// runtime stack
     private ConstantPool constantPool = new ConstantPool();  // runtime stack for the second operand
+    private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
+    private Object[] memoria;
 
     /**
      * Constructor for the VirtualMachine class.
+     *
      * @param bytecodes the bytecode instructions to be executed
-     * @param trace flag to enable tracing of the execution
-     * @param CP the constant pool used for string and real constants
+     * @param trace     flag to enable tracing of the execution
+     * @param CP        the constant pool used for string and real constants
      */
-    public VirtualMachine(byte[] bytecodes, boolean trace, ConstantPool CP) {
+    public VirtualMachine(byte[] bytecodes, boolean trace, ConstantPool CP, TabelaSimbolos tabelaSimbolos) {
         this.trace = trace;
         this.bytecodes = bytecodes;
         this.constantPool = CP;
         decode(bytecodes);
         this.IP = 0;
+        this.tabelaSimbolos = tabelaSimbolos;
+        this.memoria = new Object[tabelaSimbolos.getSizeTable()];
+
     }
 
 
@@ -55,7 +62,7 @@ public class VirtualMachine {
                         inst.add(new Instruction1Arg(opc, val));
                         break;
                     default:
-                        System.out.println("This should never happen! In file vm.java, method decode(...)");
+                      //  System.out.println("This should never happen! In file vm.java, method decode(...)");
                         System.exit(1);
                 }
             }
@@ -104,83 +111,83 @@ public class VirtualMachine {
     }
 
     private void exec_iuminus() {
-        int v =(Integer) stack.pop();
+        int v = (Integer) stack.pop();
         stack.push(-v);
     }
 
     private void exec_iadd() {
-        int right = (Integer)stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         stack.push(left + right);
     }
 
     private void exec_isub() {
-        int right =(Integer) stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         stack.push(left - right);
     }
 
     private void exec_imult() {
-        int right =(Integer) stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         stack.push(left * right);
     }
 
     private void exec_idiv() {
-        int right = (Integer)stack.pop();
-        int left =(Integer) stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (right != 0) stack.push(left / right);
         else runtime_error("division by 0");
     }
 
     private void exec_iprint() {
-        int v = (Integer)stack.pop();
+        int v = (Integer) stack.pop();
         System.out.println(v);
     }
 
     private void exec_ilt() {
-        int right =(Integer) stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left < right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_ileq() {
-        int right =(Integer) stack.pop();
-        int left =(Integer) stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left <= right) stack.push(1);
         else stack.push(0);
     }
 
 
     private void exec_ieq() {
-        int right = (Integer)stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_ineq() {
-        int right = (Integer)stack.pop();
-        int left =(Integer) stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_itos() {
-        String v = String.valueOf((Integer)stack.pop());
+        String v = String.valueOf((Integer) stack.pop());
         // push the string to the stack
         stack.push(v); //CONSTANT POOL TO BE INSERTED
     }
 
     private void exec_itod() {
-        int d = (Integer)stack.pop();
-        stack.push((double)d);
+        int d = (Integer) stack.pop();
+        stack.push((double) d);
     }
 
     private void exec_imod() {
-        int right =(Integer) stack.pop();
-        int left =(Integer) stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (right != 0) stack.push(left % right);
         else runtime_error("division by 0");
     }
@@ -189,62 +196,62 @@ public class VirtualMachine {
     private void exec_fconst() {
         stack.push(0);
     }
+
     private void exec_tconst() {
         stack.push(1);
     }
 
     private void exec_not() {
-        int v = (Integer)stack.pop();
+        int v = (Integer) stack.pop();
         if (v == 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_and() {
-        int right = (Integer)stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left != 0 && right != 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_or() {
-        int right = (Integer)stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left != 0 || right != 0) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_beq() {
-        int right =(Integer) stack.pop();
-        int left = (Integer)stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_bneq() {
-        int right =(Integer) stack.pop();
-        int left =(Integer) stack.pop();
+        int right = (Integer) stack.pop();
+        int left = (Integer) stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_btos() {
-        int v =(Integer) stack.pop();
-        String s = v==0?"falso":"verdadeiro";
+        int v = (Integer) stack.pop();
+        String s = v == 0 ? "falso" : "verdadeiro";
         // push the string to the stack
         stack.push(s); //CONSTANT POOL TO BE INSERTED
     }
 
     private void exec_bprint() {
-        int v = (Integer)stack.pop();
+        int v = (Integer) stack.pop();
         if (v == 0) System.out.println("falso");
-        else if (v==1)System.out.println("verdadeiro");
+        else if (v == 1) System.out.println("verdadeiro");
     }
-
 
 
     //___________STRING INSTRUCTIONS_____________________________________________________________
     private void exec_sprint() {
-        String v = (String)stack.pop();
+        String v = (String) stack.pop();
         System.out.println(v);
     }
 
@@ -278,63 +285,63 @@ public class VirtualMachine {
 
     //___________REAL INSTRUCTIONS_____________________________________________________________
     private void exec_dprint() {
-        Double v =(Double) stack.pop();
+        Double v = (Double) stack.pop();
         System.out.println(v);
     }
 
     private void exec_dtos() {
-        double v = (Double)stack.pop();
+        double v = (Double) stack.pop();
         String s = String.valueOf(v);
         // push the string to the stack
         stack.push(s);
     }
 
     private void exec_dneq() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (left != right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_deq() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (left == right) stack.push(1);
         else stack.push(0);
 
     }
 
     private void exec_dleq() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (left <= right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_dlt() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (left < right) stack.push(1);
         else stack.push(0);
     }
 
     private void exec_dmod() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (right != 0) stack.push(left % right);
         else runtime_error("division by 0");
     }
 
     private void exec_ddiv() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         if (right != 0) stack.push(left / right);
         else runtime_error("division by 0");
     }
 
     private void exec_dmult() {
-        double right = (Double)stack.pop();
-        double left = (Double)stack.pop();
+        double right = (Double) stack.pop();
+        double left = (Double) stack.pop();
         stack.push(left * right);
     }
 
@@ -360,13 +367,83 @@ public class VirtualMachine {
         stack.push(d);
     }
 
+    //______________VAR MEMORY INSTRUCTIONS_____________________________________________________________
+    private void exec_galloc(int arg) {
+        if (arg >= 0 && arg < memoria.length) {
+            memoria[arg] = null; // ou 0, ou false, ou "" dependendo do tipo
+
+        }
+    }
+
+    private void exec_gload(int arg) {
+        if (arg >= 0 && arg < memoria.length) {
+            Object value = memoria[arg];
+            if (value == null) {
+                runtime_error("gload: variável global no índice " + arg + " não foi inicializada");
+            }
+            stack.push(value);
+        }
+
+    }
+
+    private void exec_gstore(int arg) {
+        if (arg >= 0 && arg < memoria.length) {
+            Object value = stack.pop();
+            memoria[arg] = value;
+        } else {
+            runtime_error("gstore: índice fora dos limites da memória");
+        }
+
+
+    }
+
+    //___________JUMP INSTRUCTIONS_____________________________________________________________
+    private void exec_jump(int arg) {
+        if (arg >= 0 && arg < code.length) {
+            IP = arg - 1;
+        } else {
+            runtime_error("jump: destino inválido (" + arg + ")");
+        }
+    }
+
+    private void exec_jumpf(int arg) {
+        if (stack.isEmpty()) runtime_error("jumpf: stack vazia ao tentar obter condição");
+
+        Object cond = stack.pop();
+        boolean shouldJump = switch (cond) {
+            case null -> true;
+            case Integer i -> i == 0;
+            case Double d -> d == 0.0;
+            case Boolean b -> !b;
+            case String s -> s.isEmpty();
+            default -> {
+                runtime_error("jumpf: tipo de condição não suportado: " + cond.getClass().getSimpleName());
+                yield false; // redundante, mas necessário para compilar
+            }
+        };
+
+        if (shouldJump) {
+            if (arg >= 0 && arg < code.length) {
+                IP = arg - 1;
+            } else {
+                runtime_error("jumpf: destino inválido (" + arg + ")");
+            }
+        }
+    }
+
+
+    //___________HALT INSTRUCTION_____________________________________________________________
+    private void exec_halt() {
+        IP = code.length;
+    }
+
     //___________TYPE INSTRUCTION_____________________________________________________________
 
     /**
      * Executes the given instruction.
      * This method is responsible for executing the instruction based on its opcode.
      * It handles different types of instructions such as integer, real, string, and boolean operations.
-     * 
+     *
      * @param inst
      */
     private void exec_inst(Instruction inst) {
@@ -507,6 +584,29 @@ public class VirtualMachine {
             case bprint:
                 exec_bprint();
                 break;
+            //__________JUMP INSTRUCTIONS____________________________________
+            case jump:
+                exec_jump(((Instruction1Arg) inst).getArg());
+                break;
+            case jumpf:
+                exec_jumpf(((Instruction1Arg) inst).getArg());
+                break;
+            case galloc:
+                exec_galloc(((Instruction1Arg) inst).getArg());
+                break;
+            case gload:
+                exec_gload(((Instruction1Arg) inst).getArg());
+                break;
+            case gstore:
+                exec_gstore(((Instruction1Arg) inst).getArg());
+                break;
+            case halt:
+                exec_halt();
+                break;
+            default:
+                System.out.println("Unknown opcode encountered: " + opc);
+                System.exit(1);
+
         }
     }
 

@@ -1,9 +1,4 @@
-val: booleano;
-x, y: inteiro;
-x <- 10;
-y <- 20;
-val <- verdadeiro;
-se (x < y e val)
-escreve "x é menor e val é verdadeiro";
+se ("esta a chover")
+escreve "abre o guarda-chuva";
 senao
-escreve "condição falsa";
+escreve "tuga eh fixe";

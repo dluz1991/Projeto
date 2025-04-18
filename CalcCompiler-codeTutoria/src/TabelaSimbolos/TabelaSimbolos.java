@@ -26,9 +26,17 @@ public class TabelaSimbolos {
     public int getSizeTable() {
         return tabela.size();
     }
-    public boolean contains(String nome) {
+    public boolean containsVar(String nome) {
         return tabela.containsKey(nome);
 
+    }
+    public String getName(int index) {
+        for (Map.Entry<String, ValorSimbolo> entry : tabela.entrySet()) {
+            if (entry.getValue().getIndex() == index) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
     public Tipo getTipo(String nome) {
         if (tabela.containsKey(nome)) {
