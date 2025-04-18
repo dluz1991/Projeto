@@ -5,5 +5,6 @@ public enum Tipo {
     REAL,   // 1
     STRING, // 2
     BOOL,   // 3
+    NULL,
     ERRO    // 4
 }

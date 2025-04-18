@@ -61,9 +61,7 @@ public class VirtualMachine {
                         int val = din.readInt();
                         inst.add(new Instruction1Arg(opc, val));
                         break;
-                    default:
-                      //  System.out.println("This should never happen! In file vm.java, method decode(...)");
-                        System.exit(1);
+
                 }
             }
         } catch (java.io.EOFException e) {
@@ -141,8 +139,10 @@ public class VirtualMachine {
     }
 
     private void exec_iprint() {
-        int v = (Integer) stack.pop();
-        System.out.println(v);
+        Object v = stack.pop();
+        if (v instanceof Integer) {
+            System.out.println((Integer) v);
+        }
     }
 
     private void exec_ilt() {
@@ -369,60 +369,41 @@ public class VirtualMachine {
 
     //______________VAR MEMORY INSTRUCTIONS_____________________________________________________________
     private void exec_galloc(int arg) {
-        if (arg >= 0 && arg < memoria.length) {
-            memoria[arg] = null; // ou 0, ou false, ou "" dependendo do tipo
-
+        int old = (memoria == null ? 0 : memoria.length);
+        Object[] ng = new Object[old + arg];
+        if (memoria != null) {
+            System.arraycopy(memoria, 0, ng, 0, old);
         }
+        memoria = ng;
     }
+
 
     private void exec_gload(int arg) {
-        if (arg >= 0 && arg < memoria.length) {
-            Object value = memoria[arg];
-            if (value == null) {
-                runtime_error("gload: variável global no índice " + arg + " não foi inicializada");
-            }
-            stack.push(value);
+
+        Object val = memoria[arg];
+        if (val == null) {
+            runtime_error("tentativa de acesso a valor NULO");
         }
+        stack.push(val);
 
     }
 
-    private void exec_gstore(int arg) {
-        if (arg >= 0 && arg < memoria.length) {
-            Object value = stack.pop();
-            memoria[arg] = value;
-        } else {
-            runtime_error("gstore: índice fora dos limites da memória");
-        }
 
+    private void exec_gstore(int arg) {
+        Object v = stack.pop();
+        memoria[arg] = v;
 
     }
 
     //___________JUMP INSTRUCTIONS_____________________________________________________________
     private void exec_jump(int arg) {
-        if (arg >= 0 && arg < code.length) {
-            IP = arg - 1;
-        } else {
-            runtime_error("jump: destino inválido (" + arg + ")");
-        }
+        IP = arg - 1;
     }
 
     private void exec_jumpf(int arg) {
-        if (stack.isEmpty()) runtime_error("jumpf: stack vazia ao tentar obter condição");
-
         Object cond = stack.pop();
-        boolean shouldJump = switch (cond) {
-            case null -> true;
-            case Integer i -> i == 0;
-            case Double d -> d == 0.0;
-            case Boolean b -> !b;
-            case String s -> s.isEmpty();
-            default -> {
-                runtime_error("jumpf: tipo de condição não suportado: " + cond.getClass().getSimpleName());
-                yield false; // redundante, mas necessário para compilar
-            }
-        };
 
-        if (shouldJump) {
+        if (!((Boolean) cond)) {
             if (arg >= 0 && arg < code.length) {
                 IP = arg - 1;
             } else {
@@ -431,11 +412,6 @@ public class VirtualMachine {
         }
     }
 
-
-    //___________HALT INSTRUCTION_____________________________________________________________
-    private void exec_halt() {
-        IP = code.length;
-    }
 
     //___________TYPE INSTRUCTION_____________________________________________________________
 
@@ -451,7 +427,6 @@ public class VirtualMachine {
             System.out.println(String.format("%5s: %-15s Stack: %s", IP, inst, stack));
         }
         OpCode opc = inst.getOpCode();
-        int nArgs;
         int v;
         switch (opc) {
             //__________INTEGER___________________________________________
@@ -600,12 +575,6 @@ public class VirtualMachine {
             case gstore:
                 exec_gstore(((Instruction1Arg) inst).getArg());
                 break;
-            case halt:
-                exec_halt();
-                break;
-            default:
-                System.out.println("Unknown opcode encountered: " + opc);
-                System.exit(1);
 
         }
     }
