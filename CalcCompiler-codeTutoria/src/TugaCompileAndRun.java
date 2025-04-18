@@ -90,7 +90,7 @@ public class TugaCompileAndRun {
             }
 
             ConstantPool constantPool = new ConstantPool();
-            CodeGen codeGen = new CodeGen(checker, constantPool);
+            CodeGen codeGen = new CodeGen(checker, constantPool, tabelaSimbolos);
             codeGen.visit(tree);
             codeGen.saveBytecodes(outputFilename);
 
@@ -99,7 +99,7 @@ public class TugaCompileAndRun {
 
             if (runAfterCompile || args.length == 0) {
                 byte[] bytecodes = loadBytecodes(outputFilename);
-                VirtualMachine vm = new VirtualMachine(bytecodes, trace, constantPool);
+                VirtualMachine vm = new VirtualMachine(bytecodes, trace, constantPool, tabelaSimbolos);
                 vm.run();
             }
 

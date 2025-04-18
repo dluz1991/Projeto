@@ -1,0 +1,6 @@
+x: inteiro;
+x <- 6;
+se (x % 2 igual 0)
+escreve x + " eh par";
+senao
+escreve x + " eh impar";

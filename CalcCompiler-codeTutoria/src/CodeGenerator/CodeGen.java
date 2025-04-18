@@ -2,7 +2,7 @@ package CodeGenerator;
 
 import java.io.*;
 import java.util.*;
-
+import TabelaSimbolos.*;
 import Tuga.*;
 import ConstantPool.ConstantPool;
 import VM.OpCode;
@@ -23,6 +23,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
     private ConstantPool constantPool = new ConstantPool();
+    private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
 
     // ___________BUILDERS_________________
 
@@ -32,9 +33,10 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      * @param checker      TypeChecker para verificar os tipos das expressões.
      * @param constantPool ConstantPool para armazenar constantes.
      */
-    public CodeGen(TypeChecker checker, ConstantPool constantPool) {
+    public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
         this.typeChecker = checker;
         this.constantPool = constantPool;
+        this.tabelaSimbolos = tabelaSimbolos;
     }
 
 
@@ -60,32 +62,47 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        visitChildren(ctx);
+        for (TugaParser.VarDeclarationContext var : ctx.varDeclaration()) {
+            visit(var);
+        }
+        for (TugaParser.StatContext stat : ctx.stat()) {
+            visit(stat);
+        }
         emit(OpCode.halt);
         return null;
     }
 
-    /**
-     * Visita o nó de Stat e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
-        return visitChildren(ctx);
+        for (var id : ctx.ID()) {
+            String nome = id.getText();
+            ValorSimbolo simbolo = tabelaSimbolos.getSimbolo(nome);
+            if (simbolo != null) {
+                emit(OpCode.galloc, simbolo.getIndex());
+            } else {
+                System.err.printf("Erro: variável \"%s\" não encontrada na tabela de símbolos.%n", nome);
+            }
+        }
+        return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
+
     @Override
     public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
-        return visitChildren(ctx);
+        String nome = ctx.ID().getText();
+        ValorSimbolo simbolo = tabelaSimbolos.getSimbolo(nome);
+        if (simbolo == null) {
+            System.err.printf("Erro: variável \"%s\" não foi declarada.%n", nome);
+            return null;
+        }
+
+        Tipo tipoAlvo = simbolo.getTipo();
+        visitAndConvert(ctx.expr(), tipoAlvo);
+        emit(OpCode.gstore, simbolo.getIndex());
+
+        return null;
     }
+
 
     /**
      * {@inheritDoc}
@@ -98,27 +115,55 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return visitChildren(ctx);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
     public Void visitEquanto(TugaParser.EquantoContext ctx) {
-        return visitChildren(ctx);
+        int inicio = code.size(); // posição do início do ciclo
+
+        visitAndConvert(ctx.expr(), Tipo.BOOL);
+        int jumpfIndex = code.size();
+        emit(OpCode.jumpf, -1); // placeholder
+
+        for (var s : ctx.stat()) {
+            visit(s);
+        }
+
+        emit(OpCode.jump, inicio);
+        int fim = code.size();
+
+        // backpatch
+        Instruction1Arg jumpf = (Instruction1Arg) code.get(jumpfIndex);
+        jumpf.setArg(fim);
+
+        return null;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
+
     @Override
     public Void visitSe(TugaParser.SeContext ctx) {
-        return visitChildren(ctx);
+        visitAndConvert(ctx.expr(), Tipo.BOOL);
+        int jumpfIndex = code.size();
+        emit(OpCode.jumpf, -1); // placeholder para salto se condição for falsa
+
+        visit(ctx.stat(0)); // bloco 'então'
+
+        int jumpIndex = -1;
+        if (ctx.stat().size() > 1) {
+            jumpIndex = code.size();
+            emit(OpCode.jump, -1); // salto para depois do 'senao'
+        }
+
+        int posSenao = code.size();
+        ((Instruction1Arg) code.get(jumpfIndex)).setArg(posSenao);
+
+        if (ctx.stat().size() > 1) {
+            visit(ctx.stat(1)); // bloco 'senao'
+            int fim = code.size();
+            ((Instruction1Arg) code.get(jumpIndex)).setArg(fim);
+        }
+
+        return null;
     }
+
 
     /**
      * {@inheritDoc}
@@ -158,9 +203,17 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitVar(TugaParser.VarContext ctx) {
+        String nome = ctx.ID().getText();
+        ValorSimbolo simbolo = tabelaSimbolos.getSimbolo(nome);
+        if (simbolo == null) {
+            System.err.printf("Erro: variável \"%s\" não foi declarada.%n", nome);
+            return null;
+        }
 
+        emit(OpCode.gload, simbolo.getIndex());
         return null;
     }
+
 
     /**
      * Visita o nó de Stat e gera o bytecode correspondente.

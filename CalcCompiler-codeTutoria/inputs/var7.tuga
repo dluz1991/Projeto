@@ -1,8 +1,8 @@
 i: inteiro;
 i <- 1;
-enquanto (i)
+enquanto (i <= 5)
 inicio
 escreve i;
 i <- i + 1;
 fim
-escreve "tchau";
+escreve "tchau"
