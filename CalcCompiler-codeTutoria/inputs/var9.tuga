@@ -1,0 +1,5 @@
+x, y : inteiro;
+y <- 10;
+x <- 5;
+x <- x+y;
+escreve x;

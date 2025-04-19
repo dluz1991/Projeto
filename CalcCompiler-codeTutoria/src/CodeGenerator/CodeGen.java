@@ -16,11 +16,14 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     private final TypeChecker typeChecker;
     private ConstantPool constantPool = new ConstantPool();
     private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
+    private int addr;
+
 
     public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
         this.typeChecker = checker;
         this.constantPool = constantPool;
         this.tabelaSimbolos = tabelaSimbolos;
+        this.addr = typeChecker.getAddr();
     }
 
     private void visitAndConvert(ParseTree expr, Tipo target) {
@@ -33,7 +36,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public Void visitProg(TugaParser.ProgContext ctx) {
         for (TugaParser.VarDeclarationContext var : ctx.varDeclaration()) {
             visit(var); // regista variáveis e tipos
-            emit(OpCode.galloc, tabelaSimbolos.getSizeTable());
         }
 
 
@@ -47,7 +49,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
-        Tipo tipo = Tipo.NULL; // tipo default
+        Tipo tipo = Tipo.STRING; // tipo default
         if (ctx.TYPE() != null) {
             tipo = switch (ctx.TYPE().getText()) {
                 case "inteiro" -> Tipo.INT;
@@ -58,12 +60,21 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             };
         }
 
+        int count = 0;
         for (TerminalNode id : ctx.ID()) {
             String nome = id.getText();
+            count++;
             if (!tabelaSimbolos.containsVar(nome)) {
-                tabelaSimbolos.putSimbolo(nome, tipo); // atribui tipo e índice automático
+                tabelaSimbolos.putSimbolo(nome, tipo, addr++);
+                
             }
         }
+
+// Só faz galloc se houver novas variáveis nesta linha
+        if (count > 0) {
+            emit(OpCode.galloc, count);
+        }
+
 
         return null;
     }
@@ -77,6 +88,8 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         Tipo tipoAlvo = simbolo.getTipo();
         visitAndConvert(ctx.expr(), tipoAlvo);
         emit(OpCode.gstore, simbolo.getIndex());
+
+
         return null;
     }
 
@@ -105,7 +118,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
         return null;
     }
-
 
 
     @Override
@@ -151,7 +163,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         if (simbolo != null) emit(OpCode.gload, simbolo.getIndex());
         return null;
     }
-
 
 
     @Override
@@ -505,6 +516,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
+
     /**
      * Emite uma instrução de bytecode com um argumento.
      *

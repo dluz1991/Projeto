@@ -5,14 +5,14 @@ import CodeGenerator.Tipo;
 public class ValorSimbolo {
     private final Tipo tipo; // tipo do simbolo
     private final int index; // endereco na memoria
+    // valor do simbolo
 
     public ValorSimbolo(Tipo tipo, int endereco) {
-        if (tipo == null) {
-            this.tipo = Tipo.NULL;
-        } else {
-            this.tipo = tipo;
-        }
+
+        this.tipo = tipo;
+
         this.index = endereco;
+
     }
 
     public Tipo getTipo() {
@@ -22,4 +22,5 @@ public class ValorSimbolo {
     public int getIndex() {
         return index;
     }
+
 }
