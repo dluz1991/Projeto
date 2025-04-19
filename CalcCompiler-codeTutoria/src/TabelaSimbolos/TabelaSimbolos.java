@@ -7,16 +7,17 @@ import java.util.Map;
 
 public class TabelaSimbolos {
     private final Map<String, ValorSimbolo> tabela= new HashMap<>();
-    private int proximoIndex=0;
 
-    public void putSimbolo(String nome, Tipo tipo) {
+
+    public void putSimbolo(String nome, Tipo tipo, int addr) {
         if (tabela.containsKey(nome)) {
             throw new RuntimeException("Variável " + nome + " já existe na tabela de simbolos");
         }
-        ValorSimbolo simbolo = new ValorSimbolo(tipo, proximoIndex);
+        ValorSimbolo simbolo = new ValorSimbolo(tipo, addr);
         tabela.put(nome, simbolo);
-        proximoIndex++;
+
     }
+
     public ValorSimbolo getSimbolo(String nome) {
         return tabela.get(nome);
     }
@@ -49,6 +50,15 @@ public class TabelaSimbolos {
             return tabela.get(nome).getIndex();
         }
         return -1;
+    }
+    public void printTabela() {
+        System.out.println("Tabela de simbolos:");
+        for (Map.Entry<String, ValorSimbolo> entry : tabela.entrySet()) {
+            String nome = entry.getKey();
+            Tipo tipo = entry.getValue().getTipo();
+            int index = entry.getValue().getIndex();
+            System.out.printf("Nome: %s, Tipo: %s, Endereco: %d%n", nome, tipo, index);
+        }
     }
 
 }

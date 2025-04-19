@@ -20,7 +20,7 @@ public class TugaParser extends Parser {
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		TYPE=10, LPAREN=11, RPAREN=12, PLUS=13, MINUS=14, TIMES=15, DIV=16, REMAINDER=17, 
 		LESS=18, GREATER=19, LESSEQUAL=20, GREATEREQUAL=21, EQUAL=22, DIFFERENT=23, 
-		AND=24, OR=25, NOT=26, ID=27, INT=28, REAL=29, STRING=30, BOOL=31, SCOMMA=32, 
+		AND=24, OR=25, NOT=26, INT=27, REAL=28, STRING=29, BOOL=30, ID=31, SCOMMA=32, 
 		SL_COMMENT=33, ML_COMMENT=34, WS=35;
 	public static final int
 		RULE_prog = 0, RULE_varDeclaration = 1, RULE_stat = 2, RULE_expr = 3;
@@ -45,7 +45,7 @@ public class TugaParser extends Parser {
 			null, null, null, null, null, null, null, null, null, null, "TYPE", "LPAREN", 
 			"RPAREN", "PLUS", "MINUS", "TIMES", "DIV", "REMAINDER", "LESS", "GREATER", 
 			"LESSEQUAL", "GREATEREQUAL", "EQUAL", "DIFFERENT", "AND", "OR", "NOT", 
-			"ID", "INT", "REAL", "STRING", "BOOL", "SCOMMA", "SL_COMMENT", "ML_COMMENT", 
+			"INT", "REAL", "STRING", "BOOL", "ID", "SCOMMA", "SL_COMMENT", "ML_COMMENT", 
 			"WS"
 		};
 	}
@@ -171,7 +171,7 @@ public class TugaParser extends Parser {
 				setState(17); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 4429185744L) != 0) );
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 6442451664L) != 0) );
 			setState(19);
 			match(EOF);
 			}
@@ -447,7 +447,7 @@ public class TugaParser extends Parser {
 				setState(44);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 4429185744L) != 0)) {
+				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6442451664L) != 0)) {
 					{
 					{
 					setState(41);
@@ -1095,14 +1095,14 @@ public class TugaParser extends Parser {
 		"\u0001\u0000\u0000\u0000\u0010\u0011\u0001\u0000\u0000\u0000\u0011\u000f"+
 		"\u0001\u0000\u0000\u0000\u0011\u0012\u0001\u0000\u0000\u0000\u0012\u0013"+
 		"\u0001\u0000\u0000\u0000\u0013\u0014\u0005\u0000\u0000\u0001\u0014\u0001"+
-		"\u0001\u0000\u0000\u0000\u0015\u001a\u0005\u001b\u0000\u0000\u0016\u0017"+
-		"\u0005\u0001\u0000\u0000\u0017\u0019\u0005\u001b\u0000\u0000\u0018\u0016"+
+		"\u0001\u0000\u0000\u0000\u0015\u001a\u0005\u001f\u0000\u0000\u0016\u0017"+
+		"\u0005\u0001\u0000\u0000\u0017\u0019\u0005\u001f\u0000\u0000\u0018\u0016"+
 		"\u0001\u0000\u0000\u0000\u0019\u001c\u0001\u0000\u0000\u0000\u001a\u0018"+
 		"\u0001\u0000\u0000\u0000\u001a\u001b\u0001\u0000\u0000\u0000\u001b\u001d"+
 		"\u0001\u0000\u0000\u0000\u001c\u001a\u0001\u0000\u0000\u0000\u001d\u001f"+
 		"\u0005\u0002\u0000\u0000\u001e \u0005\n\u0000\u0000\u001f\u001e\u0001"+
 		"\u0000\u0000\u0000\u001f \u0001\u0000\u0000\u0000 !\u0001\u0000\u0000"+
-		"\u0000!\"\u0005 \u0000\u0000\"\u0003\u0001\u0000\u0000\u0000#$\u0005\u001b"+
+		"\u0000!\"\u0005 \u0000\u0000\"\u0003\u0001\u0000\u0000\u0000#$\u0005\u001f"+
 		"\u0000\u0000$%\u0005\u0003\u0000\u0000%&\u0003\u0006\u0003\u0000&\'\u0005"+
 		" \u0000\u0000\'E\u0001\u0000\u0000\u0000(,\u0005\u0004\u0000\u0000)+\u0003"+
 		"\u0004\u0002\u0000*)\u0001\u0000\u0000\u0000+.\u0001\u0000\u0000\u0000"+
@@ -1120,8 +1120,8 @@ public class TugaParser extends Parser {
 		"\u0000\u0000E\u0005\u0001\u0000\u0000\u0000FG\u0006\u0003\uffff\uffff"+
 		"\u0000GH\u0007\u0000\u0000\u0000HS\u0003\u0006\u0003\fIJ\u0005\u000b\u0000"+
 		"\u0000JK\u0003\u0006\u0003\u0000KL\u0005\f\u0000\u0000LS\u0001\u0000\u0000"+
-		"\u0000MS\u0005\u001b\u0000\u0000NS\u0005\u001c\u0000\u0000OS\u0005\u001d"+
-		"\u0000\u0000PS\u0005\u001e\u0000\u0000QS\u0005\u001f\u0000\u0000RF\u0001"+
+		"\u0000MS\u0005\u001f\u0000\u0000NS\u0005\u001b\u0000\u0000OS\u0005\u001c"+
+		"\u0000\u0000PS\u0005\u001d\u0000\u0000QS\u0005\u001e\u0000\u0000RF\u0001"+
 		"\u0000\u0000\u0000RI\u0001\u0000\u0000\u0000RM\u0001\u0000\u0000\u0000"+
 		"RN\u0001\u0000\u0000\u0000RO\u0001\u0000\u0000\u0000RP\u0001\u0000\u0000"+
 		"\u0000RQ\u0001\u0000\u0000\u0000Se\u0001\u0000\u0000\u0000TU\n\u000b\u0000"+

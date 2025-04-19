@@ -12,6 +12,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     TabelaSimbolos tabelaSimbolos;
     private int typeErrorCount = 0;
     private final Map<ParseTree, Tipo> types = new HashMap<>();
+    private int addr = 0;
 
     public TypeChecker(TabelaSimbolos tabelaSimbolos) {
         this.tabelaSimbolos = tabelaSimbolos;
@@ -54,7 +55,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         for (var id : ctx.ID()) {
             String nome = id.getText();
             if (!tabelaSimbolos.containsVar(nome)) {
-                tabelaSimbolos.putSimbolo(nome, tipo);
+                tabelaSimbolos.putSimbolo(nome, tipo, addr++);
             } else {
                 System.out.printf("erro na linha %d: variavel '%s' ja foi declarada%n", ctx.start.getLine(), nome);
                 typeErrorCount++;
@@ -134,9 +135,13 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public Void visitVar(TugaParser.VarContext ctx) {
         String nome = ctx.ID().getText();
         ValorSimbolo entrada = tabelaSimbolos.getSimbolo(nome);
-
-        types.put(ctx, entrada.getTipo());
-
+        if (entrada == null) {
+            System.err.printf("erro na linha %d: variavel '%s' nao foi declarada%n", ctx.start.getLine(), nome);
+            typeErrorCount++;
+            types.put(ctx, Tipo.ERRO);
+        } else {
+            types.put(ctx, entrada.getTipo());
+        }
         return null;
     }
 
@@ -253,8 +258,8 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             case REAL -> "real";
             case STRING -> "string";
             case BOOL -> "booleano";
-            case NULL -> "null";
             case ERRO -> "erro";
         };
     }
+    public int getAddr(){return addr;}
 }

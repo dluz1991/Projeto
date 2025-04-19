@@ -370,11 +370,11 @@ public class VirtualMachine {
     //______________VAR MEMORY INSTRUCTIONS_____________________________________________________________
     private void exec_galloc(int arg) {
         int old = (memoria == null ? 0 : memoria.length);
-        Object[] ng = new Object[old + arg];
+        Object[] newMemory = new Object[old + arg];
         if (memoria != null) {
-            System.arraycopy(memoria, 0, ng, 0, old);
+            System.arraycopy(memoria, 0, newMemory, 0, old);
         }
-        memoria = ng;
+        memoria = newMemory;
     }
 
 
@@ -382,8 +382,10 @@ public class VirtualMachine {
 
         Object val = memoria[arg];
         if (val == null) {
-            runtime_error("tentativa de acesso a valor NULO");
+            System.out.println("erro de runtime: tentativa de acesso a valor NULO");
+            System.exit(0);
         }
+
         stack.push(val);
 
     }
@@ -401,9 +403,8 @@ public class VirtualMachine {
     }
 
     private void exec_jumpf(int arg) {
-        Object cond = stack.pop();
-
-        if (!((Boolean) cond)) {
+        int cond = (Integer) stack.pop();
+        if (cond == 0) {
             if (arg >= 0 && arg < code.length) {
                 IP = arg - 1;
             } else {
@@ -411,6 +412,7 @@ public class VirtualMachine {
             }
         }
     }
+
 
 
     //___________TYPE INSTRUCTION_____________________________________________________________
@@ -578,13 +580,19 @@ public class VirtualMachine {
 
         }
     }
-
+    private void printMemoria(){
+        System.out.println("Memoria:");
+        for (int i = 0; i < memoria.length; i++) {
+            System.out.println("Endereco " + i + ": " + memoria[i]);
+        }
+    }
 
     public void run() {
         if (trace) {
             System.out.println("Trace while running the code");
             System.out.println("Execution starts at instrution " + IP);
         }
+        //printMemoria();
         System.out.println("*** VM output ***");
         while (IP < code.length) {
             exec_inst(code[IP]);

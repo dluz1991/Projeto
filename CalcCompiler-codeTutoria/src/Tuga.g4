@@ -44,11 +44,11 @@ DIFFERENT : 'diferente' ;
 AND     : 'e' ;
 OR : 'ou' ;
 NOT : 'nao' ;
-ID: [a-zA-Z_][a-zA-Z_0-9]*;
 INT      : DIGIT+ ;
 REAL     : DIGIT+ '.' DIGIT+ ;
 STRING   : '"' .*? '"' ;
 BOOL     : 'verdadeiro' | 'falso' ;
+ID: [a-zA-Z_][a-zA-Z_0-9]*;
 SCOMMA   : ';' ;
 SL_COMMENT : '//' .*? (EOF|'\n') -> skip; // single-line comment
 ML_COMMENT : '/*' .*? '*/' -> skip ; // multi-line comment

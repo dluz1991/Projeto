@@ -52,8 +52,8 @@ public enum OpCode {
     not     (0),
     btos (0),
     // Instructions for variables, 1 or 2 arguments (5 bytes)
-    jump(2),
-    jumpf(2),
+    jump(1),
+    jumpf(1),
     galloc(1),
     gload(1),
     gstore(1),

@@ -1,6 +1,6 @@
-x: inteiro;
-x <- 6;
-se (x % 2 igual 0)
-escreve x + " eh par";
-senao
-escreve x + " eh impar";
+i,j,k: inteiro;
+b: booleano;
+b <- verdadeiro;
+escreve b;
+i <- 5;
+escreve i + j;
