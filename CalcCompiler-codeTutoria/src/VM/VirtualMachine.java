@@ -6,6 +6,7 @@ import VM.Instruction.*;
 
 import java.util.*;
 import java.io.*;
+import java.util.stream.Collectors;
 
 /**
  * The Virtual Machine for the Tuga programming language.
@@ -22,7 +23,7 @@ public class VirtualMachine {
     private Stack<Object> stack = new Stack<>();// runtime stack
     private ConstantPool constantPool = new ConstantPool();  // runtime stack for the second operand
     private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
-    private Object[] memoria;
+    private Object[] global;
 
     /**
      * Constructor for the VirtualMachine class.
@@ -38,7 +39,7 @@ public class VirtualMachine {
         decode(bytecodes);
         this.IP = 0;
         this.tabelaSimbolos = tabelaSimbolos;
-        this.memoria = new Object[tabelaSimbolos.getSizeTable()];
+        this.global = new Object[tabelaSimbolos.getSizeTable()];
 
     }
 
@@ -99,7 +100,9 @@ public class VirtualMachine {
 
     private void runtime_error(String msg) {
         System.out.println("runtime error: " + msg);
-        if (trace) System.out.println(String.format("%22s Stack: %s", "", stack));
+        if (trace){
+            System.out.println(String.format("%22s Stack: %s", "", stack));
+        }
         System.exit(1);
     }
 
@@ -369,18 +372,18 @@ public class VirtualMachine {
 
     //______________VAR MEMORY INSTRUCTIONS_____________________________________________________________
     private void exec_galloc(int arg) {
-        int old = (memoria == null ? 0 : memoria.length);
+        int old = (global == null ? 0 : global.length);
         Object[] newMemory = new Object[old + arg];
-        if (memoria != null) {
-            System.arraycopy(memoria, 0, newMemory, 0, old);
+        if (global != null) {
+            System.arraycopy(global, 0, newMemory, 0, old);
         }
-        memoria = newMemory;
+        global = newMemory;
     }
 
 
     private void exec_gload(int arg) {
 
-        Object val = memoria[arg];
+        Object val = global[arg];
         if (val == null) {
             System.out.println("erro de runtime: tentativa de acesso a valor NULO");
             System.exit(0);
@@ -393,7 +396,7 @@ public class VirtualMachine {
 
     private void exec_gstore(int arg) {
         Object v = stack.pop();
-        memoria[arg] = v;
+        global[arg] = v;
 
     }
 
@@ -426,8 +429,32 @@ public class VirtualMachine {
      */
     private void exec_inst(Instruction inst) {
         if (trace) {
-            System.out.println(String.format("%5s: %-15s Stack: %s", IP, inst, stack));
+            int alignWidth = 28;
+
+            // Linha "    IP: instrução"
+            String left = String.format("%4s: %-20s", IP, inst); // 4 espaços + ":" + 20 chars para a instrução
+
+            int padding = alignWidth - left.length();
+            String spaces = " ".repeat(Math.max(padding, 0));
+
+            // Filtra os valores não-nulos de global
+            String globalStr = Arrays.stream(global)
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", ", "[", "]"));
+
+            // Linha da instrução + Global
+            System.out.println(left + spaces + "Global: " + globalStr);
+
+            // Stack e registos, alinhados com "Global:"
+            String indent = " ".repeat(alignWidth);
+            System.out.println(indent + "Stack:" + stack);
+            System.out.println(indent + "IP=" + IP + "  ,  FP="+IP+"\n");
         }
+
+
+
+
         OpCode opc = inst.getOpCode();
         int v;
         switch (opc) {
@@ -494,9 +521,6 @@ public class VirtualMachine {
                 break;
             case ddiv:
                 exec_ddiv();
-                break;
-            case dmod:
-                exec_dmod();
                 break;
             case dlt:
                 exec_dlt();
@@ -577,13 +601,14 @@ public class VirtualMachine {
             case gstore:
                 exec_gstore(((Instruction1Arg) inst).getArg());
                 break;
-
+            case halt:
+                System.exit(0);
         }
     }
     private void printMemoria(){
         System.out.println("Memoria:");
-        for (int i = 0; i < memoria.length; i++) {
-            System.out.println("Endereco " + i + ": " + memoria[i]);
+        for (int i = 0; i < global.length; i++) {
+            System.out.println("Endereco " + i + ": " + global[i]);
         }
     }
 
@@ -598,7 +623,11 @@ public class VirtualMachine {
             exec_inst(code[IP]);
             IP++;
         }
-        if (trace) System.out.println(String.format("%22s Stack: %s", "", stack));
+        if (trace){
+            System.out.println(String.format("%3sGlobal: %s", "", Arrays.toString(global)));
+            System.out.println(String.format("%3sStack: %s", "", stack));
+
+        }
     }
 
 }

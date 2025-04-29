@@ -4,7 +4,10 @@ import CodeGenerator.Tipo;
 
 import java.util.HashMap;
 import java.util.Map;
-
+/**
+ * Classe que representa a tabela de simbolos.
+ * A tabela de simbolos é um mapa que associa nomes de variaveis a seus tipos e enderecos.
+ */
 public class TabelaSimbolos {
     private final Map<String, ValorSimbolo> tabela= new HashMap<>();
 

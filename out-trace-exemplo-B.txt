@@ -1,0 +1,228 @@
+*** Constant pool ***
+*** Instructions ***
+0: call 2
+1: halt
+2: iconst 3
+3: call 6
+4: iprint
+5: ret 0
+6: lload -1
+7: iconst 0
+8: ieq
+9: jumpf 12
+10: iconst 1
+11: retval 1
+12: lload -1
+13: lload -1
+14: iconst 1
+15: isub
+16: call 6
+17: imult
+18: retval 1
+*** VM output ***
+Constant pool
+Disassembled instructions
+    0: call 2         
+    1: halt           
+    2: iconst 3       
+    3: call 6         
+    4: iprint         
+    5: ret 0          
+    6: lload -1       
+    7: iconst 0       
+    8: ieq            
+    9: jumpf 12       
+   10: iconst 1       
+   11: retval 1       
+   12: lload -1       
+   13: lload -1       
+   14: iconst 1       
+   15: isub           
+   16: call 6         
+   17: imult          
+   18: retval 1       
+Trace while running the code
+Execution starts at instrution 0
+                       Globals: []
+                       Stack: []
+                       IP: 0  FP: 0
+    0: call 2         
+                       Globals: []
+                       Stack: [0, 1]
+                       IP: 2  FP: 0
+    2: iconst 3       
+                       Globals: []
+                       Stack: [0, 1, 3]
+                       IP: 3  FP: 0
+    3: call 6         
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4]
+                       IP: 6  FP: 3
+    6: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3]
+                       IP: 7  FP: 3
+    7: iconst 0       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 0]
+                       IP: 8  FP: 3
+    8: ieq            
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, falso]
+                       IP: 9  FP: 3
+    9: jumpf 12       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4]
+                       IP: 12  FP: 3
+   12: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3]
+                       IP: 13  FP: 3
+   13: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 3]
+                       IP: 14  FP: 3
+   14: iconst 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 3, 1]
+                       IP: 15  FP: 3
+   15: isub           
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2]
+                       IP: 16  FP: 3
+   16: call 6         
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17]
+                       IP: 6  FP: 7
+    6: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2]
+                       IP: 7  FP: 7
+    7: iconst 0       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 0]
+                       IP: 8  FP: 7
+    8: ieq            
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, falso]
+                       IP: 9  FP: 7
+    9: jumpf 12       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17]
+                       IP: 12  FP: 7
+   12: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2]
+                       IP: 13  FP: 7
+   13: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 2]
+                       IP: 14  FP: 7
+   14: iconst 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 2, 1]
+                       IP: 15  FP: 7
+   15: isub           
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1]
+                       IP: 16  FP: 7
+   16: call 6         
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17]
+                       IP: 6  FP: 11
+    6: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1]
+                       IP: 7  FP: 11
+    7: iconst 0       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0]
+                       IP: 8  FP: 11
+    8: ieq            
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, falso]
+                       IP: 9  FP: 11
+    9: jumpf 12       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17]
+                       IP: 12  FP: 11
+   12: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1]
+                       IP: 13  FP: 11
+   13: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 1]
+                       IP: 14  FP: 11
+   14: iconst 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 1, 1]
+                       IP: 15  FP: 11
+   15: isub           
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0]
+                       IP: 16  FP: 11
+   16: call 6         
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17]
+                       IP: 6  FP: 15
+    6: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17, 0]
+                       IP: 7  FP: 15
+    7: iconst 0       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17, 0, 0]
+                       IP: 8  FP: 15
+    8: ieq            
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17, verdadeiro]
+                       IP: 9  FP: 15
+    9: jumpf 12       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17]
+                       IP: 10  FP: 15
+   10: iconst 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 0, 11, 17, 1]
+                       IP: 11  FP: 15
+   11: retval 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1, 1]
+                       IP: 17  FP: 11
+   17: imult          
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1, 7, 17, 1]
+                       IP: 18  FP: 11
+   18: retval 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2, 1]
+                       IP: 17  FP: 7
+   17: imult          
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2, 3, 17, 2]
+                       IP: 18  FP: 7
+   18: retval 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 3, 2]
+                       IP: 17  FP: 3
+   17: imult          
+                       Globals: []
+                       Stack: [0, 1, 3, 0, 4, 6]
+                       IP: 18  FP: 3
+   18: retval 1       
+                       Globals: []
+                       Stack: [0, 1, 6]
+                       IP: 4  FP: 0
+    4: iprint         
+6
+                       Globals: []
+                       Stack: [0, 1]
+                       IP: 5  FP: 0
+    5: ret 0          
+                       Globals: []
+                       Stack: []
+                       IP: 1  FP: 0
+    1: halt           
+                       Globals: []
+                       Stack: []
