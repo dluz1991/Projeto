@@ -64,13 +64,8 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         for (TerminalNode id : ctx.ID()) {
             String nome = id.getText();
             count++;
-            if (!tabelaSimbolos.containsVar(nome)) {
-                tabelaSimbolos.putSimbolo(nome, tipo, addr++);
-                
-            }
         }
-
-// Só faz galloc se houver novas variáveis nesta linha
+        //conta o numero de variaveis por linha e emite codigo
         if (count > 0) {
             emit(OpCode.galloc, count);
         }
@@ -314,7 +309,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                 switch (op) {
                     case "*" -> emit(OpCode.dmult);
                     case "/" -> emit(OpCode.ddiv);
-                    case "%" -> emit(OpCode.dmod);
                 }
             }
             default -> System.err.println("Erro: tipo não suportado em MulDiv");

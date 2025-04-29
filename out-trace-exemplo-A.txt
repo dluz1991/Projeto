@@ -1,0 +1,124 @@
+*** Constant pool ***
+*** Instructions ***
+0: call 14
+1: halt
+2: lload -1
+3: lload -1
+4: imult
+5: retval 1
+6: lalloc 1
+7: lload -2
+8: lload -1
+9: iadd
+10: call 2
+11: lstore 2
+12: lload 2
+13: retval 2
+14: iconst 3
+15: iconst 2
+16: call 6
+17: iprint
+18: ret 0
+*** VM output ***
+Constant pool
+Disassembled instructions
+    0: call 14        
+    1: halt           
+    2: lload -1       
+    3: lload -1       
+    4: imult          
+    5: retval 1       
+    6: lalloc 1       
+    7: lload -2       
+    8: lload -1       
+    9: iadd           
+   10: call 2         
+   11: lstore 2       
+   12: lload 2        
+   13: retval 2       
+   14: iconst 3       
+   15: iconst 2       
+   16: call 6         
+   17: iprint         
+   18: ret 0          
+Trace while running the code
+Execution starts at instrution 0
+                       Globals: []
+                       Stack: []
+                       IP: 0  FP: 0
+    0: call 14        
+                       Globals: []
+                       Stack: [0, 1]
+                       IP: 14  FP: 0
+   14: iconst 3       
+                       Globals: []
+                       Stack: [0, 1, 3]
+                       IP: 15  FP: 0
+   15: iconst 2       
+                       Globals: []
+                       Stack: [0, 1, 3, 2]
+                       IP: 16  FP: 0
+   16: call 6         
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17]
+                       IP: 6  FP: 4
+    6: lalloc 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO]
+                       IP: 7  FP: 4
+    7: lload -2       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 3]
+                       IP: 8  FP: 4
+    8: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 3, 2]
+                       IP: 9  FP: 4
+    9: iadd           
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 5]
+                       IP: 10  FP: 4
+   10: call 2         
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 5, 4, 11]
+                       IP: 2  FP: 8
+    2: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 5, 4, 11, 5]
+                       IP: 3  FP: 8
+    3: lload -1       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 5, 4, 11, 5, 5]
+                       IP: 4  FP: 8
+    4: imult          
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 5, 4, 11, 25]
+                       IP: 5  FP: 8
+    5: retval 1       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, NULO, 25]
+                       IP: 11  FP: 4
+   11: lstore 2       
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, 25]
+                       IP: 12  FP: 4
+   12: lload 2        
+                       Globals: []
+                       Stack: [0, 1, 3, 2, 0, 17, 25, 25]
+                       IP: 13  FP: 4
+   13: retval 2       
+                       Globals: []
+                       Stack: [0, 1, 25]
+                       IP: 17  FP: 0
+   17: iprint         
+25
+                       Globals: []
+                       Stack: [0, 1]
+                       IP: 18  FP: 0
+   18: ret 0          
+                       Globals: []
+                       Stack: []
+                       IP: 1  FP: 0
+    1: halt           
+                       Globals: []
+                       Stack: []

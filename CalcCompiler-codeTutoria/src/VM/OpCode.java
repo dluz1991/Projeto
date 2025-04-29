@@ -59,8 +59,7 @@ public enum OpCode {
     gstore(1),
     // stop execution
     halt     (0),
-    //nao existe no op code da virtual machine
-    dmod (0),
+
     ;
 
 
