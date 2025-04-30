@@ -41,6 +41,18 @@ public class TugaBaseListener implements TugaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterFormalParameter(TugaParser.FormalParameterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFormalParameter(TugaParser.FormalParameterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterFormalParameters(TugaParser.FormalParametersContext ctx) { }
 	/**
 	 * {@inheritDoc}
