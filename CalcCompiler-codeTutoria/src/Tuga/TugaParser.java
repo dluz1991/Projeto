@@ -18,35 +18,38 @@ public class TugaParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
-		TYPE=10, LPAREN=11, RPAREN=12, PLUS=13, MINUS=14, TIMES=15, DIV=16, REMAINDER=17, 
-		LESS=18, GREATER=19, LESSEQUAL=20, GREATEREQUAL=21, EQUAL=22, DIFFERENT=23, 
-		AND=24, OR=25, NOT=26, INT=27, REAL=28, STRING=29, BOOL=30, ID=31, SCOMMA=32, 
-		SL_COMMENT=33, ML_COMMENT=34, WS=35;
+		T__9=10, T__10=11, TYPE=12, LPAREN=13, RPAREN=14, PLUS=15, MINUS=16, TIMES=17, 
+		DIV=18, REMAINDER=19, LESS=20, GREATER=21, LESSEQUAL=22, GREATEREQUAL=23, 
+		EQUAL=24, DIFFERENT=25, AND=26, OR=27, NOT=28, INT=29, REAL=30, STRING=31, 
+		BOOL=32, ID=33, SCOMMA=34, SL_COMMENT=35, ML_COMMENT=36, WS=37;
 	public static final int
-		RULE_prog = 0, RULE_varDeclaration = 1, RULE_stat = 2, RULE_expr = 3;
+		RULE_prog = 0, RULE_functionDecl = 1, RULE_formalParameters = 2, RULE_bloco = 3, 
+		RULE_varDeclaration = 4, RULE_stat = 5, RULE_expr = 6, RULE_exprList = 7;
 	private static String[] makeRuleNames() {
 		return new String[] {
-			"prog", "varDeclaration", "stat", "expr"
+			"prog", "functionDecl", "formalParameters", "bloco", "varDeclaration", 
+			"stat", "expr", "exprList"
 		};
 	}
 	public static final String[] ruleNames = makeRuleNames();
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "','", "':'", "'<-'", "'inicio'", "'fim'", "'enquanto'", "'se'", 
-			"'senao'", "'escreve'", null, "'('", "')'", "'+'", "'-'", "'*'", "'/'", 
-			"'%'", "'<'", "'>'", "'<='", "'>='", "'igual'", "'diferente'", "'e'", 
-			"'ou'", "'nao'", null, null, null, null, null, "';'"
+			null, "'funcao'", "':'", "','", "'inicio'", "'fim'", "'<-'", "'enquanto'", 
+			"'se'", "'senao'", "'escreve'", "'retorna'", null, "'('", "')'", "'+'", 
+			"'-'", "'*'", "'/'", "'%'", "'<'", "'>'", "'<='", "'>='", "'igual'", 
+			"'diferente'", "'e'", "'ou'", "'nao'", null, null, null, null, null, 
+			"';'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, null, null, null, null, null, null, null, null, "TYPE", "LPAREN", 
-			"RPAREN", "PLUS", "MINUS", "TIMES", "DIV", "REMAINDER", "LESS", "GREATER", 
-			"LESSEQUAL", "GREATEREQUAL", "EQUAL", "DIFFERENT", "AND", "OR", "NOT", 
-			"INT", "REAL", "STRING", "BOOL", "ID", "SCOMMA", "SL_COMMENT", "ML_COMMENT", 
-			"WS"
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			"TYPE", "LPAREN", "RPAREN", "PLUS", "MINUS", "TIMES", "DIV", "REMAINDER", 
+			"LESS", "GREATER", "LESSEQUAL", "GREATEREQUAL", "EQUAL", "DIFFERENT", 
+			"AND", "OR", "NOT", "INT", "REAL", "STRING", "BOOL", "ID", "SCOMMA", 
+			"SL_COMMENT", "ML_COMMENT", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -109,11 +112,11 @@ public class TugaParser extends Parser {
 		public VarDeclarationContext varDeclaration(int i) {
 			return getRuleContext(VarDeclarationContext.class,i);
 		}
-		public List<StatContext> stat() {
-			return getRuleContexts(StatContext.class);
+		public List<FunctionDeclContext> functionDecl() {
+			return getRuleContexts(FunctionDeclContext.class);
 		}
-		public StatContext stat(int i) {
-			return getRuleContext(StatContext.class,i);
+		public FunctionDeclContext functionDecl(int i) {
+			return getRuleContext(FunctionDeclContext.class,i);
 		}
 		public ProgContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -139,41 +142,284 @@ public class TugaParser extends Parser {
 		enterRule(_localctx, 0, RULE_prog);
 		int _la;
 		try {
-			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(11);
+			setState(19);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,0,_ctx);
-			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
-				if ( _alt==1 ) {
-					{
-					{
-					setState(8);
-					varDeclaration();
-					}
-					} 
+			_la = _input.LA(1);
+			while (_la==ID) {
+				{
+				{
+				setState(16);
+				varDeclaration();
 				}
-				setState(13);
+				}
+				setState(21);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,0,_ctx);
+				_la = _input.LA(1);
 			}
-			setState(15); 
+			setState(23); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
 				{
-				setState(14);
+				setState(22);
+				functionDecl();
+				}
+				}
+				setState(25); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( _la==T__0 );
+			setState(27);
+			match(EOF);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	@SuppressWarnings("CheckReturnValue")
+	public static class FunctionDeclContext extends ParserRuleContext {
+		public TerminalNode ID() { return getToken(TugaParser.ID, 0); }
+		public TerminalNode LPAREN() { return getToken(TugaParser.LPAREN, 0); }
+		public TerminalNode RPAREN() { return getToken(TugaParser.RPAREN, 0); }
+		public BlocoContext bloco() {
+			return getRuleContext(BlocoContext.class,0);
+		}
+		public FormalParametersContext formalParameters() {
+			return getRuleContext(FormalParametersContext.class,0);
+		}
+		public TerminalNode TYPE() { return getToken(TugaParser.TYPE, 0); }
+		public FunctionDeclContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_functionDecl; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterFunctionDecl(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitFunctionDecl(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitFunctionDecl(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final FunctionDeclContext functionDecl() throws RecognitionException {
+		FunctionDeclContext _localctx = new FunctionDeclContext(_ctx, getState());
+		enterRule(_localctx, 2, RULE_functionDecl);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(29);
+			match(T__0);
+			setState(30);
+			match(ID);
+			setState(31);
+			match(LPAREN);
+			setState(33);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==ID) {
+				{
+				setState(32);
+				formalParameters();
+				}
+			}
+
+			setState(35);
+			match(RPAREN);
+			setState(38);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==T__1) {
+				{
+				setState(36);
+				match(T__1);
+				setState(37);
+				match(TYPE);
+				}
+			}
+
+			setState(40);
+			bloco();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	@SuppressWarnings("CheckReturnValue")
+	public static class FormalParametersContext extends ParserRuleContext {
+		public List<TerminalNode> ID() { return getTokens(TugaParser.ID); }
+		public TerminalNode ID(int i) {
+			return getToken(TugaParser.ID, i);
+		}
+		public List<TerminalNode> TYPE() { return getTokens(TugaParser.TYPE); }
+		public TerminalNode TYPE(int i) {
+			return getToken(TugaParser.TYPE, i);
+		}
+		public FormalParametersContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_formalParameters; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterFormalParameters(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitFormalParameters(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitFormalParameters(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final FormalParametersContext formalParameters() throws RecognitionException {
+		FormalParametersContext _localctx = new FormalParametersContext(_ctx, getState());
+		enterRule(_localctx, 4, RULE_formalParameters);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(42);
+			match(ID);
+			setState(43);
+			match(T__1);
+			setState(44);
+			match(TYPE);
+			setState(51);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while (_la==T__2) {
+				{
+				{
+				setState(45);
+				match(T__2);
+				setState(46);
+				match(ID);
+				setState(47);
+				match(T__1);
+				setState(48);
+				match(TYPE);
+				}
+				}
+				setState(53);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	@SuppressWarnings("CheckReturnValue")
+	public static class BlocoContext extends ParserRuleContext {
+		public List<VarDeclarationContext> varDeclaration() {
+			return getRuleContexts(VarDeclarationContext.class);
+		}
+		public VarDeclarationContext varDeclaration(int i) {
+			return getRuleContext(VarDeclarationContext.class,i);
+		}
+		public List<StatContext> stat() {
+			return getRuleContexts(StatContext.class);
+		}
+		public StatContext stat(int i) {
+			return getRuleContext(StatContext.class,i);
+		}
+		public BlocoContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_bloco; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterBloco(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitBloco(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitBloco(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final BlocoContext bloco() throws RecognitionException {
+		BlocoContext _localctx = new BlocoContext(_ctx, getState());
+		enterRule(_localctx, 6, RULE_bloco);
+		int _la;
+		try {
+			int _alt;
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(54);
+			match(T__3);
+			setState(58);
+			_errHandler.sync(this);
+			_alt = getInterpreter().adaptivePredict(_input,5,_ctx);
+			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
+				if ( _alt==1 ) {
+					{
+					{
+					setState(55);
+					varDeclaration();
+					}
+					} 
+				}
+				setState(60);
+				_errHandler.sync(this);
+				_alt = getInterpreter().adaptivePredict(_input,5,_ctx);
+			}
+			setState(64);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 25769807248L) != 0)) {
+				{
+				{
+				setState(61);
 				stat();
 				}
 				}
-				setState(17); 
+				setState(66);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 6442451664L) != 0) );
-			setState(19);
-			match(EOF);
+			}
+			setState(67);
+			match(T__4);
 			}
 		}
 		catch (RecognitionException re) {
@@ -216,42 +462,42 @@ public class TugaParser extends Parser {
 
 	public final VarDeclarationContext varDeclaration() throws RecognitionException {
 		VarDeclarationContext _localctx = new VarDeclarationContext(_ctx, getState());
-		enterRule(_localctx, 2, RULE_varDeclaration);
+		enterRule(_localctx, 8, RULE_varDeclaration);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(21);
+			setState(69);
 			match(ID);
-			setState(26);
+			setState(74);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__0) {
+			while (_la==T__2) {
 				{
 				{
-				setState(22);
-				match(T__0);
-				setState(23);
+				setState(70);
+				match(T__2);
+				setState(71);
 				match(ID);
 				}
 				}
-				setState(28);
+				setState(76);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(29);
+			setState(77);
 			match(T__1);
-			setState(31);
+			setState(79);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==TYPE) {
 				{
-				setState(30);
+				setState(78);
 				match(TYPE);
 				}
 			}
 
-			setState(33);
+			setState(81);
 			match(SCOMMA);
 			}
 		}
@@ -375,25 +621,47 @@ public class TugaParser extends Parser {
 		}
 	}
 	@SuppressWarnings("CheckReturnValue")
-	public static class BlocoContext extends StatContext {
-		public List<StatContext> stat() {
-			return getRuleContexts(StatContext.class);
+	public static class ChamadaFuncaoContext extends StatContext {
+		public TerminalNode ID() { return getToken(TugaParser.ID, 0); }
+		public TerminalNode LPAREN() { return getToken(TugaParser.LPAREN, 0); }
+		public TerminalNode RPAREN() { return getToken(TugaParser.RPAREN, 0); }
+		public TerminalNode SCOMMA() { return getToken(TugaParser.SCOMMA, 0); }
+		public ExprContext expr() {
+			return getRuleContext(ExprContext.class,0);
 		}
-		public StatContext stat(int i) {
-			return getRuleContext(StatContext.class,i);
-		}
-		public BlocoContext(StatContext ctx) { copyFrom(ctx); }
+		public ChamadaFuncaoContext(StatContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterBloco(this);
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterChamadaFuncao(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitBloco(this);
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitChamadaFuncao(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitBloco(this);
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitChamadaFuncao(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class RetornaContext extends StatContext {
+		public ExprContext expr() {
+			return getRuleContext(ExprContext.class,0);
+		}
+		public TerminalNode SCOMMA() { return getToken(TugaParser.SCOMMA, 0); }
+		public RetornaContext(StatContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterRetorna(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitRetorna(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitRetorna(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -415,119 +683,157 @@ public class TugaParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class BlocoStatContext extends StatContext {
+		public BlocoContext bloco() {
+			return getRuleContext(BlocoContext.class,0);
+		}
+		public BlocoStatContext(StatContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterBlocoStat(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitBlocoStat(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitBlocoStat(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 
 	public final StatContext stat() throws RecognitionException {
 		StatContext _localctx = new StatContext(_ctx, getState());
-		enterRule(_localctx, 4, RULE_stat);
+		enterRule(_localctx, 10, RULE_stat);
 		int _la;
 		try {
-			setState(68);
+			setState(120);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case ID:
+			switch ( getInterpreter().adaptivePredict(_input,11,_ctx) ) {
+			case 1:
 				_localctx = new AfetacaoContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(35);
+				setState(83);
 				match(ID);
-				setState(36);
-				match(T__2);
-				setState(37);
+				setState(84);
+				match(T__5);
+				setState(85);
 				expr(0);
-				setState(38);
+				setState(86);
 				match(SCOMMA);
 				}
 				break;
-			case T__3:
-				_localctx = new BlocoContext(_localctx);
+			case 2:
+				_localctx = new BlocoStatContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(40);
-				match(T__3);
-				setState(44);
-				_errHandler.sync(this);
-				_la = _input.LA(1);
-				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6442451664L) != 0)) {
-					{
-					{
-					setState(41);
-					stat();
-					}
-					}
-					setState(46);
-					_errHandler.sync(this);
-					_la = _input.LA(1);
-				}
-				setState(47);
-				match(T__4);
+				setState(88);
+				bloco();
 				}
 				break;
-			case T__5:
+			case 3:
 				_localctx = new EquantoContext(_localctx);
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(48);
-				match(T__5);
-				setState(49);
+				setState(89);
+				match(T__6);
+				setState(90);
 				match(LPAREN);
-				setState(50);
+				setState(91);
 				expr(0);
-				setState(51);
+				setState(92);
 				match(RPAREN);
-				setState(52);
+				setState(93);
 				stat();
 				}
 				break;
-			case T__6:
+			case 4:
 				_localctx = new SeContext(_localctx);
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(54);
-				match(T__6);
-				setState(55);
+				setState(95);
+				match(T__7);
+				setState(96);
 				match(LPAREN);
-				setState(56);
+				setState(97);
 				expr(0);
-				setState(57);
+				setState(98);
 				match(RPAREN);
-				setState(58);
+				setState(99);
 				stat();
-				setState(61);
+				setState(102);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,5,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,9,_ctx) ) {
 				case 1:
 					{
-					setState(59);
-					match(T__7);
-					setState(60);
+					setState(100);
+					match(T__8);
+					setState(101);
 					stat();
 					}
 					break;
 				}
 				}
 				break;
-			case T__8:
+			case 5:
 				_localctx = new EscreveContext(_localctx);
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(63);
-				match(T__8);
-				setState(64);
+				setState(104);
+				match(T__9);
+				setState(105);
 				expr(0);
-				setState(65);
+				setState(106);
 				match(SCOMMA);
 				}
 				break;
-			case SCOMMA:
-				_localctx = new VaziaContext(_localctx);
+			case 6:
+				_localctx = new RetornaContext(_localctx);
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(67);
+				setState(108);
+				match(T__10);
+				setState(109);
+				expr(0);
+				setState(110);
 				match(SCOMMA);
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
+			case 7:
+				_localctx = new ChamadaFuncaoContext(_localctx);
+				enterOuterAlt(_localctx, 7);
+				{
+				setState(112);
+				match(ID);
+				setState(113);
+				match(LPAREN);
+				setState(115);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 16911507456L) != 0)) {
+					{
+					setState(114);
+					expr(0);
+					}
+				}
+
+				setState(117);
+				match(RPAREN);
+				setState(118);
+				match(SCOMMA);
+				}
+				break;
+			case 8:
+				_localctx = new VaziaContext(_localctx);
+				enterOuterAlt(_localctx, 8);
+				{
+				setState(119);
+				match(SCOMMA);
+				}
+				break;
 			}
 		}
 		catch (RecognitionException re) {
@@ -575,24 +881,6 @@ public class TugaParser extends Parser {
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitOr(this);
-			else return visitor.visitChildren(this);
-		}
-	}
-	@SuppressWarnings("CheckReturnValue")
-	public static class BoolContext extends ExprContext {
-		public TerminalNode BOOL() { return getToken(TugaParser.BOOL, 0); }
-		public BoolContext(ExprContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterBool(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitBool(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitBool(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -690,49 +978,6 @@ public class TugaParser extends Parser {
 		}
 	}
 	@SuppressWarnings("CheckReturnValue")
-	public static class AndContext extends ExprContext {
-		public Token op;
-		public List<ExprContext> expr() {
-			return getRuleContexts(ExprContext.class);
-		}
-		public ExprContext expr(int i) {
-			return getRuleContext(ExprContext.class,i);
-		}
-		public TerminalNode AND() { return getToken(TugaParser.AND, 0); }
-		public AndContext(ExprContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterAnd(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitAnd(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitAnd(this);
-			else return visitor.visitChildren(this);
-		}
-	}
-	@SuppressWarnings("CheckReturnValue")
-	public static class RealContext extends ExprContext {
-		public TerminalNode REAL() { return getToken(TugaParser.REAL, 0); }
-		public RealContext(ExprContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterReal(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitReal(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitReal(this);
-			else return visitor.visitChildren(this);
-		}
-	}
-	@SuppressWarnings("CheckReturnValue")
 	public static class RelationalContext extends ExprContext {
 		public Token op;
 		public List<ExprContext> expr() {
@@ -821,6 +1066,90 @@ public class TugaParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class ChamadaFuncaoExprContext extends ExprContext {
+		public TerminalNode ID() { return getToken(TugaParser.ID, 0); }
+		public TerminalNode LPAREN() { return getToken(TugaParser.LPAREN, 0); }
+		public TerminalNode RPAREN() { return getToken(TugaParser.RPAREN, 0); }
+		public ExprListContext exprList() {
+			return getRuleContext(ExprListContext.class,0);
+		}
+		public ChamadaFuncaoExprContext(ExprContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterChamadaFuncaoExpr(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitChamadaFuncaoExpr(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitChamadaFuncaoExpr(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class BoolContext extends ExprContext {
+		public TerminalNode BOOL() { return getToken(TugaParser.BOOL, 0); }
+		public BoolContext(ExprContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterBool(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitBool(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitBool(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class AndContext extends ExprContext {
+		public Token op;
+		public List<ExprContext> expr() {
+			return getRuleContexts(ExprContext.class);
+		}
+		public ExprContext expr(int i) {
+			return getRuleContext(ExprContext.class,i);
+		}
+		public TerminalNode AND() { return getToken(TugaParser.AND, 0); }
+		public AndContext(ExprContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterAnd(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitAnd(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitAnd(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	@SuppressWarnings("CheckReturnValue")
+	public static class RealContext extends ExprContext {
+		public TerminalNode REAL() { return getToken(TugaParser.REAL, 0); }
+		public RealContext(ExprContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterReal(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitReal(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitReal(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 
 	public final ExprContext expr() throws RecognitionException {
 		return expr(0);
@@ -831,24 +1160,23 @@ public class TugaParser extends Parser {
 		int _parentState = getState();
 		ExprContext _localctx = new ExprContext(_ctx, _parentState);
 		ExprContext _prevctx = _localctx;
-		int _startState = 6;
-		enterRecursionRule(_localctx, 6, RULE_expr, _p);
+		int _startState = 12;
+		enterRecursionRule(_localctx, 12, RULE_expr, _p);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(82);
+			setState(140);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case MINUS:
-			case NOT:
+			switch ( getInterpreter().adaptivePredict(_input,13,_ctx) ) {
+			case 1:
 				{
 				_localctx = new UnaryContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
 
-				setState(71);
+				setState(123);
 				((UnaryContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==MINUS || _la==NOT) ) {
@@ -859,93 +1187,114 @@ public class TugaParser extends Parser {
 					_errHandler.reportMatch(this);
 					consume();
 				}
-				setState(72);
-				expr(12);
+				setState(124);
+				expr(13);
 				}
 				break;
-			case LPAREN:
+			case 2:
 				{
 				_localctx = new ParensContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(73);
+				setState(125);
 				match(LPAREN);
-				setState(74);
+				setState(126);
 				expr(0);
-				setState(75);
+				setState(127);
 				match(RPAREN);
 				}
 				break;
-			case ID:
+			case 3:
+				{
+				_localctx = new ChamadaFuncaoExprContext(_localctx);
+				_ctx = _localctx;
+				_prevctx = _localctx;
+				setState(129);
+				match(ID);
+				setState(130);
+				match(LPAREN);
+				setState(132);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 16911507456L) != 0)) {
+					{
+					setState(131);
+					exprList();
+					}
+				}
+
+				setState(134);
+				match(RPAREN);
+				}
+				break;
+			case 4:
 				{
 				_localctx = new VarContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(77);
+				setState(135);
 				match(ID);
 				}
 				break;
-			case INT:
+			case 5:
 				{
 				_localctx = new IntContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(78);
+				setState(136);
 				match(INT);
 				}
 				break;
-			case REAL:
+			case 6:
 				{
 				_localctx = new RealContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(79);
+				setState(137);
 				match(REAL);
 				}
 				break;
-			case STRING:
+			case 7:
 				{
 				_localctx = new StringContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(80);
+				setState(138);
 				match(STRING);
 				}
 				break;
-			case BOOL:
+			case 8:
 				{
 				_localctx = new BoolContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(81);
+				setState(139);
 				match(BOOL);
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
 			}
 			_ctx.stop = _input.LT(-1);
-			setState(101);
+			setState(159);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,9,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,15,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					if ( _parseListeners!=null ) triggerExitRuleEvent();
 					_prevctx = _localctx;
 					{
-					setState(99);
+					setState(157);
 					_errHandler.sync(this);
-					switch ( getInterpreter().adaptivePredict(_input,8,_ctx) ) {
+					switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
 					case 1:
 						{
 						_localctx = new MulDivContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
-						setState(84);
-						if (!(precpred(_ctx, 11))) throw new FailedPredicateException(this, "precpred(_ctx, 11)");
-						setState(85);
+						setState(142);
+						if (!(precpred(_ctx, 12))) throw new FailedPredicateException(this, "precpred(_ctx, 12)");
+						setState(143);
 						((MulDivContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 229376L) != 0)) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 917504L) != 0)) ) {
 							((MulDivContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -953,17 +1302,17 @@ public class TugaParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(86);
-						expr(12);
+						setState(144);
+						expr(13);
 						}
 						break;
 					case 2:
 						{
 						_localctx = new AddSubContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
-						setState(87);
-						if (!(precpred(_ctx, 10))) throw new FailedPredicateException(this, "precpred(_ctx, 10)");
-						setState(88);
+						setState(145);
+						if (!(precpred(_ctx, 11))) throw new FailedPredicateException(this, "precpred(_ctx, 11)");
+						setState(146);
 						((AddSubContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==PLUS || _la==MINUS) ) {
@@ -974,20 +1323,20 @@ public class TugaParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(89);
-						expr(11);
+						setState(147);
+						expr(12);
 						}
 						break;
 					case 3:
 						{
 						_localctx = new RelationalContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
-						setState(90);
-						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
-						setState(91);
+						setState(148);
+						if (!(precpred(_ctx, 10))) throw new FailedPredicateException(this, "precpred(_ctx, 10)");
+						setState(149);
 						((RelationalContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 16515072L) != 0)) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 66060288L) != 0)) ) {
 							((RelationalContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -995,40 +1344,40 @@ public class TugaParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(92);
-						expr(10);
+						setState(150);
+						expr(11);
 						}
 						break;
 					case 4:
 						{
 						_localctx = new AndContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
-						setState(93);
-						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
-						setState(94);
+						setState(151);
+						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
+						setState(152);
 						((AndContext)_localctx).op = match(AND);
-						setState(95);
-						expr(9);
+						setState(153);
+						expr(10);
 						}
 						break;
 					case 5:
 						{
 						_localctx = new OrContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
-						setState(96);
-						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
-						setState(97);
+						setState(154);
+						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
+						setState(155);
 						((OrContext)_localctx).op = match(OR);
-						setState(98);
-						expr(8);
+						setState(156);
+						expr(9);
 						}
 						break;
 					}
 					} 
 				}
-				setState(103);
+				setState(161);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,9,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,15,_ctx);
 			}
 			}
 		}
@@ -1043,9 +1392,74 @@ public class TugaParser extends Parser {
 		return _localctx;
 	}
 
+	@SuppressWarnings("CheckReturnValue")
+	public static class ExprListContext extends ParserRuleContext {
+		public List<ExprContext> expr() {
+			return getRuleContexts(ExprContext.class);
+		}
+		public ExprContext expr(int i) {
+			return getRuleContext(ExprContext.class,i);
+		}
+		public ExprListContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_exprList; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).enterExprList(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof TugaListener ) ((TugaListener)listener).exitExprList(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof TugaVisitor ) return ((TugaVisitor<? extends T>)visitor).visitExprList(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final ExprListContext exprList() throws RecognitionException {
+		ExprListContext _localctx = new ExprListContext(_ctx, getState());
+		enterRule(_localctx, 14, RULE_exprList);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(162);
+			expr(0);
+			setState(167);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while (_la==T__2) {
+				{
+				{
+				setState(163);
+				match(T__2);
+				setState(164);
+				expr(0);
+				}
+				}
+				setState(169);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
 	public boolean sempred(RuleContext _localctx, int ruleIndex, int predIndex) {
 		switch (ruleIndex) {
-		case 3:
+		case 6:
 			return expr_sempred((ExprContext)_localctx, predIndex);
 		}
 		return true;
@@ -1053,87 +1467,130 @@ public class TugaParser extends Parser {
 	private boolean expr_sempred(ExprContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 11);
+			return precpred(_ctx, 12);
 		case 1:
-			return precpred(_ctx, 10);
+			return precpred(_ctx, 11);
 		case 2:
-			return precpred(_ctx, 9);
+			return precpred(_ctx, 10);
 		case 3:
-			return precpred(_ctx, 8);
+			return precpred(_ctx, 9);
 		case 4:
-			return precpred(_ctx, 7);
+			return precpred(_ctx, 8);
 		}
 		return true;
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001#i\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002\u0002"+
-		"\u0007\u0002\u0002\u0003\u0007\u0003\u0001\u0000\u0005\u0000\n\b\u0000"+
-		"\n\u0000\f\u0000\r\t\u0000\u0001\u0000\u0004\u0000\u0010\b\u0000\u000b"+
-		"\u0000\f\u0000\u0011\u0001\u0000\u0001\u0000\u0001\u0001\u0001\u0001\u0001"+
-		"\u0001\u0005\u0001\u0019\b\u0001\n\u0001\f\u0001\u001c\t\u0001\u0001\u0001"+
-		"\u0001\u0001\u0003\u0001 \b\u0001\u0001\u0001\u0001\u0001\u0001\u0002"+
-		"\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
-		"\u0005\u0002+\b\u0002\n\u0002\f\u0002.\t\u0002\u0001\u0002\u0001\u0002"+
-		"\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
-		"\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
-		"\u0003\u0002>\b\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002"+
-		"\u0001\u0002\u0003\u0002E\b\u0002\u0001\u0003\u0001\u0003\u0001\u0003"+
-		"\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
-		"\u0001\u0003\u0001\u0003\u0001\u0003\u0003\u0003S\b\u0003\u0001\u0003"+
-		"\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
-		"\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
-		"\u0001\u0003\u0001\u0003\u0005\u0003d\b\u0003\n\u0003\f\u0003g\t\u0003"+
-		"\u0001\u0003\u0000\u0001\u0006\u0004\u0000\u0002\u0004\u0006\u0000\u0004"+
-		"\u0002\u0000\u000e\u000e\u001a\u001a\u0001\u0000\u000f\u0011\u0001\u0000"+
-		"\r\u000e\u0001\u0000\u0012\u0017z\u0000\u000b\u0001\u0000\u0000\u0000"+
-		"\u0002\u0015\u0001\u0000\u0000\u0000\u0004D\u0001\u0000\u0000\u0000\u0006"+
-		"R\u0001\u0000\u0000\u0000\b\n\u0003\u0002\u0001\u0000\t\b\u0001\u0000"+
-		"\u0000\u0000\n\r\u0001\u0000\u0000\u0000\u000b\t\u0001\u0000\u0000\u0000"+
-		"\u000b\f\u0001\u0000\u0000\u0000\f\u000f\u0001\u0000\u0000\u0000\r\u000b"+
-		"\u0001\u0000\u0000\u0000\u000e\u0010\u0003\u0004\u0002\u0000\u000f\u000e"+
-		"\u0001\u0000\u0000\u0000\u0010\u0011\u0001\u0000\u0000\u0000\u0011\u000f"+
-		"\u0001\u0000\u0000\u0000\u0011\u0012\u0001\u0000\u0000\u0000\u0012\u0013"+
-		"\u0001\u0000\u0000\u0000\u0013\u0014\u0005\u0000\u0000\u0001\u0014\u0001"+
-		"\u0001\u0000\u0000\u0000\u0015\u001a\u0005\u001f\u0000\u0000\u0016\u0017"+
-		"\u0005\u0001\u0000\u0000\u0017\u0019\u0005\u001f\u0000\u0000\u0018\u0016"+
-		"\u0001\u0000\u0000\u0000\u0019\u001c\u0001\u0000\u0000\u0000\u001a\u0018"+
-		"\u0001\u0000\u0000\u0000\u001a\u001b\u0001\u0000\u0000\u0000\u001b\u001d"+
-		"\u0001\u0000\u0000\u0000\u001c\u001a\u0001\u0000\u0000\u0000\u001d\u001f"+
-		"\u0005\u0002\u0000\u0000\u001e \u0005\n\u0000\u0000\u001f\u001e\u0001"+
-		"\u0000\u0000\u0000\u001f \u0001\u0000\u0000\u0000 !\u0001\u0000\u0000"+
-		"\u0000!\"\u0005 \u0000\u0000\"\u0003\u0001\u0000\u0000\u0000#$\u0005\u001f"+
-		"\u0000\u0000$%\u0005\u0003\u0000\u0000%&\u0003\u0006\u0003\u0000&\'\u0005"+
-		" \u0000\u0000\'E\u0001\u0000\u0000\u0000(,\u0005\u0004\u0000\u0000)+\u0003"+
-		"\u0004\u0002\u0000*)\u0001\u0000\u0000\u0000+.\u0001\u0000\u0000\u0000"+
-		",*\u0001\u0000\u0000\u0000,-\u0001\u0000\u0000\u0000-/\u0001\u0000\u0000"+
-		"\u0000.,\u0001\u0000\u0000\u0000/E\u0005\u0005\u0000\u000001\u0005\u0006"+
-		"\u0000\u000012\u0005\u000b\u0000\u000023\u0003\u0006\u0003\u000034\u0005"+
-		"\f\u0000\u000045\u0003\u0004\u0002\u00005E\u0001\u0000\u0000\u000067\u0005"+
-		"\u0007\u0000\u000078\u0005\u000b\u0000\u000089\u0003\u0006\u0003\u0000"+
-		"9:\u0005\f\u0000\u0000:=\u0003\u0004\u0002\u0000;<\u0005\b\u0000\u0000"+
-		"<>\u0003\u0004\u0002\u0000=;\u0001\u0000\u0000\u0000=>\u0001\u0000\u0000"+
-		"\u0000>E\u0001\u0000\u0000\u0000?@\u0005\t\u0000\u0000@A\u0003\u0006\u0003"+
-		"\u0000AB\u0005 \u0000\u0000BE\u0001\u0000\u0000\u0000CE\u0005 \u0000\u0000"+
-		"D#\u0001\u0000\u0000\u0000D(\u0001\u0000\u0000\u0000D0\u0001\u0000\u0000"+
-		"\u0000D6\u0001\u0000\u0000\u0000D?\u0001\u0000\u0000\u0000DC\u0001\u0000"+
-		"\u0000\u0000E\u0005\u0001\u0000\u0000\u0000FG\u0006\u0003\uffff\uffff"+
-		"\u0000GH\u0007\u0000\u0000\u0000HS\u0003\u0006\u0003\fIJ\u0005\u000b\u0000"+
-		"\u0000JK\u0003\u0006\u0003\u0000KL\u0005\f\u0000\u0000LS\u0001\u0000\u0000"+
-		"\u0000MS\u0005\u001f\u0000\u0000NS\u0005\u001b\u0000\u0000OS\u0005\u001c"+
-		"\u0000\u0000PS\u0005\u001d\u0000\u0000QS\u0005\u001e\u0000\u0000RF\u0001"+
-		"\u0000\u0000\u0000RI\u0001\u0000\u0000\u0000RM\u0001\u0000\u0000\u0000"+
-		"RN\u0001\u0000\u0000\u0000RO\u0001\u0000\u0000\u0000RP\u0001\u0000\u0000"+
-		"\u0000RQ\u0001\u0000\u0000\u0000Se\u0001\u0000\u0000\u0000TU\n\u000b\u0000"+
-		"\u0000UV\u0007\u0001\u0000\u0000Vd\u0003\u0006\u0003\fWX\n\n\u0000\u0000"+
-		"XY\u0007\u0002\u0000\u0000Yd\u0003\u0006\u0003\u000bZ[\n\t\u0000\u0000"+
-		"[\\\u0007\u0003\u0000\u0000\\d\u0003\u0006\u0003\n]^\n\b\u0000\u0000^"+
-		"_\u0005\u0018\u0000\u0000_d\u0003\u0006\u0003\t`a\n\u0007\u0000\u0000"+
-		"ab\u0005\u0019\u0000\u0000bd\u0003\u0006\u0003\bcT\u0001\u0000\u0000\u0000"+
-		"cW\u0001\u0000\u0000\u0000cZ\u0001\u0000\u0000\u0000c]\u0001\u0000\u0000"+
-		"\u0000c`\u0001\u0000\u0000\u0000dg\u0001\u0000\u0000\u0000ec\u0001\u0000"+
-		"\u0000\u0000ef\u0001\u0000\u0000\u0000f\u0007\u0001\u0000\u0000\u0000"+
-		"ge\u0001\u0000\u0000\u0000\n\u000b\u0011\u001a\u001f,=DRce";
+		"\u0004\u0001%\u00ab\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
+		"\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007\u0001"+
+		"\u0000\u0005\u0000\u0012\b\u0000\n\u0000\f\u0000\u0015\t\u0000\u0001\u0000"+
+		"\u0004\u0000\u0018\b\u0000\u000b\u0000\f\u0000\u0019\u0001\u0000\u0001"+
+		"\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0003\u0001\"\b"+
+		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0003\u0001\'\b\u0001\u0001"+
+		"\u0001\u0001\u0001\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001"+
+		"\u0002\u0001\u0002\u0001\u0002\u0005\u00022\b\u0002\n\u0002\f\u00025\t"+
+		"\u0002\u0001\u0003\u0001\u0003\u0005\u00039\b\u0003\n\u0003\f\u0003<\t"+
+		"\u0003\u0001\u0003\u0005\u0003?\b\u0003\n\u0003\f\u0003B\t\u0003\u0001"+
+		"\u0003\u0001\u0003\u0001\u0004\u0001\u0004\u0001\u0004\u0005\u0004I\b"+
+		"\u0004\n\u0004\f\u0004L\t\u0004\u0001\u0004\u0001\u0004\u0003\u0004P\b"+
+		"\u0004\u0001\u0004\u0001\u0004\u0001\u0005\u0001\u0005\u0001\u0005\u0001"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0003\u0005g\b\u0005\u0001"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0003\u0005t\b"+
+		"\u0005\u0001\u0005\u0001\u0005\u0001\u0005\u0003\u0005y\b\u0005\u0001"+
+		"\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001"+
+		"\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0003\u0006\u0085\b\u0006\u0001"+
+		"\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0003"+
+		"\u0006\u008d\b\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001"+
+		"\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001"+
+		"\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0005\u0006\u009e"+
+		"\b\u0006\n\u0006\f\u0006\u00a1\t\u0006\u0001\u0007\u0001\u0007\u0001\u0007"+
+		"\u0005\u0007\u00a6\b\u0007\n\u0007\f\u0007\u00a9\t\u0007\u0001\u0007\u0000"+
+		"\u0001\f\b\u0000\u0002\u0004\u0006\b\n\f\u000e\u0000\u0004\u0002\u0000"+
+		"\u0010\u0010\u001c\u001c\u0001\u0000\u0011\u0013\u0001\u0000\u000f\u0010"+
+		"\u0001\u0000\u0014\u0019\u00c2\u0000\u0013\u0001\u0000\u0000\u0000\u0002"+
+		"\u001d\u0001\u0000\u0000\u0000\u0004*\u0001\u0000\u0000\u0000\u00066\u0001"+
+		"\u0000\u0000\u0000\bE\u0001\u0000\u0000\u0000\nx\u0001\u0000\u0000\u0000"+
+		"\f\u008c\u0001\u0000\u0000\u0000\u000e\u00a2\u0001\u0000\u0000\u0000\u0010"+
+		"\u0012\u0003\b\u0004\u0000\u0011\u0010\u0001\u0000\u0000\u0000\u0012\u0015"+
+		"\u0001\u0000\u0000\u0000\u0013\u0011\u0001\u0000\u0000\u0000\u0013\u0014"+
+		"\u0001\u0000\u0000\u0000\u0014\u0017\u0001\u0000\u0000\u0000\u0015\u0013"+
+		"\u0001\u0000\u0000\u0000\u0016\u0018\u0003\u0002\u0001\u0000\u0017\u0016"+
+		"\u0001\u0000\u0000\u0000\u0018\u0019\u0001\u0000\u0000\u0000\u0019\u0017"+
+		"\u0001\u0000\u0000\u0000\u0019\u001a\u0001\u0000\u0000\u0000\u001a\u001b"+
+		"\u0001\u0000\u0000\u0000\u001b\u001c\u0005\u0000\u0000\u0001\u001c\u0001"+
+		"\u0001\u0000\u0000\u0000\u001d\u001e\u0005\u0001\u0000\u0000\u001e\u001f"+
+		"\u0005!\u0000\u0000\u001f!\u0005\r\u0000\u0000 \"\u0003\u0004\u0002\u0000"+
+		"! \u0001\u0000\u0000\u0000!\"\u0001\u0000\u0000\u0000\"#\u0001\u0000\u0000"+
+		"\u0000#&\u0005\u000e\u0000\u0000$%\u0005\u0002\u0000\u0000%\'\u0005\f"+
+		"\u0000\u0000&$\u0001\u0000\u0000\u0000&\'\u0001\u0000\u0000\u0000\'(\u0001"+
+		"\u0000\u0000\u0000()\u0003\u0006\u0003\u0000)\u0003\u0001\u0000\u0000"+
+		"\u0000*+\u0005!\u0000\u0000+,\u0005\u0002\u0000\u0000,3\u0005\f\u0000"+
+		"\u0000-.\u0005\u0003\u0000\u0000./\u0005!\u0000\u0000/0\u0005\u0002\u0000"+
+		"\u000002\u0005\f\u0000\u00001-\u0001\u0000\u0000\u000025\u0001\u0000\u0000"+
+		"\u000031\u0001\u0000\u0000\u000034\u0001\u0000\u0000\u00004\u0005\u0001"+
+		"\u0000\u0000\u000053\u0001\u0000\u0000\u00006:\u0005\u0004\u0000\u0000"+
+		"79\u0003\b\u0004\u000087\u0001\u0000\u0000\u00009<\u0001\u0000\u0000\u0000"+
+		":8\u0001\u0000\u0000\u0000:;\u0001\u0000\u0000\u0000;@\u0001\u0000\u0000"+
+		"\u0000<:\u0001\u0000\u0000\u0000=?\u0003\n\u0005\u0000>=\u0001\u0000\u0000"+
+		"\u0000?B\u0001\u0000\u0000\u0000@>\u0001\u0000\u0000\u0000@A\u0001\u0000"+
+		"\u0000\u0000AC\u0001\u0000\u0000\u0000B@\u0001\u0000\u0000\u0000CD\u0005"+
+		"\u0005\u0000\u0000D\u0007\u0001\u0000\u0000\u0000EJ\u0005!\u0000\u0000"+
+		"FG\u0005\u0003\u0000\u0000GI\u0005!\u0000\u0000HF\u0001\u0000\u0000\u0000"+
+		"IL\u0001\u0000\u0000\u0000JH\u0001\u0000\u0000\u0000JK\u0001\u0000\u0000"+
+		"\u0000KM\u0001\u0000\u0000\u0000LJ\u0001\u0000\u0000\u0000MO\u0005\u0002"+
+		"\u0000\u0000NP\u0005\f\u0000\u0000ON\u0001\u0000\u0000\u0000OP\u0001\u0000"+
+		"\u0000\u0000PQ\u0001\u0000\u0000\u0000QR\u0005\"\u0000\u0000R\t\u0001"+
+		"\u0000\u0000\u0000ST\u0005!\u0000\u0000TU\u0005\u0006\u0000\u0000UV\u0003"+
+		"\f\u0006\u0000VW\u0005\"\u0000\u0000Wy\u0001\u0000\u0000\u0000Xy\u0003"+
+		"\u0006\u0003\u0000YZ\u0005\u0007\u0000\u0000Z[\u0005\r\u0000\u0000[\\"+
+		"\u0003\f\u0006\u0000\\]\u0005\u000e\u0000\u0000]^\u0003\n\u0005\u0000"+
+		"^y\u0001\u0000\u0000\u0000_`\u0005\b\u0000\u0000`a\u0005\r\u0000\u0000"+
+		"ab\u0003\f\u0006\u0000bc\u0005\u000e\u0000\u0000cf\u0003\n\u0005\u0000"+
+		"de\u0005\t\u0000\u0000eg\u0003\n\u0005\u0000fd\u0001\u0000\u0000\u0000"+
+		"fg\u0001\u0000\u0000\u0000gy\u0001\u0000\u0000\u0000hi\u0005\n\u0000\u0000"+
+		"ij\u0003\f\u0006\u0000jk\u0005\"\u0000\u0000ky\u0001\u0000\u0000\u0000"+
+		"lm\u0005\u000b\u0000\u0000mn\u0003\f\u0006\u0000no\u0005\"\u0000\u0000"+
+		"oy\u0001\u0000\u0000\u0000pq\u0005!\u0000\u0000qs\u0005\r\u0000\u0000"+
+		"rt\u0003\f\u0006\u0000sr\u0001\u0000\u0000\u0000st\u0001\u0000\u0000\u0000"+
+		"tu\u0001\u0000\u0000\u0000uv\u0005\u000e\u0000\u0000vy\u0005\"\u0000\u0000"+
+		"wy\u0005\"\u0000\u0000xS\u0001\u0000\u0000\u0000xX\u0001\u0000\u0000\u0000"+
+		"xY\u0001\u0000\u0000\u0000x_\u0001\u0000\u0000\u0000xh\u0001\u0000\u0000"+
+		"\u0000xl\u0001\u0000\u0000\u0000xp\u0001\u0000\u0000\u0000xw\u0001\u0000"+
+		"\u0000\u0000y\u000b\u0001\u0000\u0000\u0000z{\u0006\u0006\uffff\uffff"+
+		"\u0000{|\u0007\u0000\u0000\u0000|\u008d\u0003\f\u0006\r}~\u0005\r\u0000"+
+		"\u0000~\u007f\u0003\f\u0006\u0000\u007f\u0080\u0005\u000e\u0000\u0000"+
+		"\u0080\u008d\u0001\u0000\u0000\u0000\u0081\u0082\u0005!\u0000\u0000\u0082"+
+		"\u0084\u0005\r\u0000\u0000\u0083\u0085\u0003\u000e\u0007\u0000\u0084\u0083"+
+		"\u0001\u0000\u0000\u0000\u0084\u0085\u0001\u0000\u0000\u0000\u0085\u0086"+
+		"\u0001\u0000\u0000\u0000\u0086\u008d\u0005\u000e\u0000\u0000\u0087\u008d"+
+		"\u0005!\u0000\u0000\u0088\u008d\u0005\u001d\u0000\u0000\u0089\u008d\u0005"+
+		"\u001e\u0000\u0000\u008a\u008d\u0005\u001f\u0000\u0000\u008b\u008d\u0005"+
+		" \u0000\u0000\u008cz\u0001\u0000\u0000\u0000\u008c}\u0001\u0000\u0000"+
+		"\u0000\u008c\u0081\u0001\u0000\u0000\u0000\u008c\u0087\u0001\u0000\u0000"+
+		"\u0000\u008c\u0088\u0001\u0000\u0000\u0000\u008c\u0089\u0001\u0000\u0000"+
+		"\u0000\u008c\u008a\u0001\u0000\u0000\u0000\u008c\u008b\u0001\u0000\u0000"+
+		"\u0000\u008d\u009f\u0001\u0000\u0000\u0000\u008e\u008f\n\f\u0000\u0000"+
+		"\u008f\u0090\u0007\u0001\u0000\u0000\u0090\u009e\u0003\f\u0006\r\u0091"+
+		"\u0092\n\u000b\u0000\u0000\u0092\u0093\u0007\u0002\u0000\u0000\u0093\u009e"+
+		"\u0003\f\u0006\f\u0094\u0095\n\n\u0000\u0000\u0095\u0096\u0007\u0003\u0000"+
+		"\u0000\u0096\u009e\u0003\f\u0006\u000b\u0097\u0098\n\t\u0000\u0000\u0098"+
+		"\u0099\u0005\u001a\u0000\u0000\u0099\u009e\u0003\f\u0006\n\u009a\u009b"+
+		"\n\b\u0000\u0000\u009b\u009c\u0005\u001b\u0000\u0000\u009c\u009e\u0003"+
+		"\f\u0006\t\u009d\u008e\u0001\u0000\u0000\u0000\u009d\u0091\u0001\u0000"+
+		"\u0000\u0000\u009d\u0094\u0001\u0000\u0000\u0000\u009d\u0097\u0001\u0000"+
+		"\u0000\u0000\u009d\u009a\u0001\u0000\u0000\u0000\u009e\u00a1\u0001\u0000"+
+		"\u0000\u0000\u009f\u009d\u0001\u0000\u0000\u0000\u009f\u00a0\u0001\u0000"+
+		"\u0000\u0000\u00a0\r\u0001\u0000\u0000\u0000\u00a1\u009f\u0001\u0000\u0000"+
+		"\u0000\u00a2\u00a7\u0003\f\u0006\u0000\u00a3\u00a4\u0005\u0003\u0000\u0000"+
+		"\u00a4\u00a6\u0003\f\u0006\u0000\u00a5\u00a3\u0001\u0000\u0000\u0000\u00a6"+
+		"\u00a9\u0001\u0000\u0000\u0000\u00a7\u00a5\u0001\u0000\u0000\u0000\u00a7"+
+		"\u00a8\u0001\u0000\u0000\u0000\u00a8\u000f\u0001\u0000\u0000\u0000\u00a9"+
+		"\u00a7\u0001\u0000\u0000\u0000\u0011\u0013\u0019!&3:@JOfsx\u0084\u008c"+
+		"\u009d\u009f\u00a7";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

@@ -57,6 +57,14 @@ public enum OpCode {
     galloc(1),
     gload(1),
     gstore(1),
+    //Functions
+    lalloc(1), //aloca n posicoes no topo do stack para armazenar variaveis locais. Essas n posicoes de memoria ficam inicializadas com o valor NIL.
+    lload(1), //empilha o conte´udo de Stack[F P + addr] no stack
+    lstore(1), //faz pop do stack e guarda o valor em Stack[F P + addr]
+    pop(1), //desempilha n elementos do stack
+    call(1), //Cria um novo frame no stack, que passara a ser o frame currente
+    retval(1), //desempilha o valor do retorno da funcao
+    ret(1), //desempilha o frame atual e retorna para o frame anterior
     // stop execution
     halt     (0),
 

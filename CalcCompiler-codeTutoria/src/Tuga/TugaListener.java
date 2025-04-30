@@ -18,6 +18,36 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitProg(TugaParser.ProgContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TugaParser#functionDecl}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionDecl(TugaParser.FunctionDeclContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#functionDecl}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionDecl(TugaParser.FunctionDeclContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TugaParser#formalParameters}.
+	 * @param ctx the parse tree
+	 */
+	void enterFormalParameters(TugaParser.FormalParametersContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#formalParameters}.
+	 * @param ctx the parse tree
+	 */
+	void exitFormalParameters(TugaParser.FormalParametersContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TugaParser#bloco}.
+	 * @param ctx the parse tree
+	 */
+	void enterBloco(TugaParser.BlocoContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#bloco}.
+	 * @param ctx the parse tree
+	 */
+	void exitBloco(TugaParser.BlocoContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TugaParser#varDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -40,17 +70,17 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitAfetacao(TugaParser.AfetacaoContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code Bloco}
+	 * Enter a parse tree produced by the {@code BlocoStat}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
 	 */
-	void enterBloco(TugaParser.BlocoContext ctx);
+	void enterBlocoStat(TugaParser.BlocoStatContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code Bloco}
+	 * Exit a parse tree produced by the {@code BlocoStat}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
 	 */
-	void exitBloco(TugaParser.BlocoContext ctx);
+	void exitBlocoStat(TugaParser.BlocoStatContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Equanto}
 	 * labeled alternative in {@link TugaParser#stat}.
@@ -88,6 +118,30 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitEscreve(TugaParser.EscreveContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code Retorna}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void enterRetorna(TugaParser.RetornaContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Retorna}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void exitRetorna(TugaParser.RetornaContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ChamadaFuncao}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void enterChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ChamadaFuncao}
+	 * labeled alternative in {@link TugaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void exitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code Vazia}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
@@ -111,18 +165,6 @@ public interface TugaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitOr(TugaParser.OrContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code Bool}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void enterBool(TugaParser.BoolContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code Bool}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void exitBool(TugaParser.BoolContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code MulDiv}
 	 * labeled alternative in {@link TugaParser#expr}.
@@ -172,30 +214,6 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitVar(TugaParser.VarContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code And}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void enterAnd(TugaParser.AndContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code And}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void exitAnd(TugaParser.AndContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code Real}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void enterReal(TugaParser.RealContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code Real}
-	 * labeled alternative in {@link TugaParser#expr}.
-	 * @param ctx the parse tree
-	 */
-	void exitReal(TugaParser.RealContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code Relational}
 	 * labeled alternative in {@link TugaParser#expr}.
 	 * @param ctx the parse tree
@@ -243,4 +261,62 @@ public interface TugaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitInt(TugaParser.IntContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ChamadaFuncaoExpr}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ChamadaFuncaoExpr}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code Bool}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterBool(TugaParser.BoolContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Bool}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitBool(TugaParser.BoolContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code And}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterAnd(TugaParser.AndContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code And}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitAnd(TugaParser.AndContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code Real}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterReal(TugaParser.RealContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Real}
+	 * labeled alternative in {@link TugaParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitReal(TugaParser.RealContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TugaParser#exprList}.
+	 * @param ctx the parse tree
+	 */
+	void enterExprList(TugaParser.ExprListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#exprList}.
+	 * @param ctx the parse tree
+	 */
+	void exitExprList(TugaParser.ExprListContext ctx);
 }

@@ -1,14 +1,21 @@
 grammar Tuga;
 
-prog   : varDeclaration* stat+ EOF;
+prog    : varDeclaration* functionDecl+ EOF;
+
+functionDecl : 'funcao' ID LPAREN formalParameters? RPAREN(':' TYPE)? bloco;
+
+formalParameters : ID ':'TYPE (',' ID ':' TYPE)*;
+bloco : 'inicio' varDeclaration* stat* 'fim' ;
 
 varDeclaration: ID(','ID)* ':' TYPE? SCOMMA;
 
 stat   : ID '<-' expr SCOMMA                           # Afetacao
-       | 'inicio' stat* 'fim'                          # Bloco
+       | bloco                                       # BlocoStat
        | 'enquanto' LPAREN expr RPAREN stat           # Equanto
        | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
        | 'escreve' expr SCOMMA                         # Escreve
+       | 'retorna' expr SCOMMA                          # Retorna
+       | ID LPAREN expr? RPAREN SCOMMA       # ChamadaFuncao
        | SCOMMA                                        # Vazia
        ;
 
@@ -20,12 +27,16 @@ expr   :op=(MINUS|NOT) expr                                                 # Un
        | expr op=AND expr                                                   # And
        | expr op=OR expr                                                    # Or
        |LPAREN expr RPAREN                                                  # Parens
+       |ID LPAREN exprList? RPAREN                                          # ChamadaFuncaoExpr
        |ID                                                                  # Var
        |INT                                                                 # Int
        |REAL                                                                # Real
        |STRING                                                              # String
        |BOOL                                                                # Bool
        ;
+
+
+exprList: expr (',' expr)*;
 
 TYPE    :'inteiro' | 'real' | 'string' | 'booleano' ;
 LPAREN  : '(' ;
