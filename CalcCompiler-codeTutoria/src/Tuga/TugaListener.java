@@ -28,6 +28,16 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitFunctionDecl(TugaParser.FunctionDeclContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TugaParser#formalParameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterFormalParameter(TugaParser.FormalParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#formalParameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitFormalParameter(TugaParser.FormalParameterContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TugaParser#formalParameters}.
 	 * @param ctx the parse tree
 	 */

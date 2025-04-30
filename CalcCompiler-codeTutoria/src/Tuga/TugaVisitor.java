@@ -23,6 +23,12 @@ public interface TugaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFunctionDecl(TugaParser.FunctionDeclContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link TugaParser#formalParameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFormalParameter(TugaParser.FormalParameterContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link TugaParser#formalParameters}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

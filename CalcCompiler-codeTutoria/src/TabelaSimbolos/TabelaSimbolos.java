@@ -30,6 +30,7 @@ public class TabelaSimbolos {
         tabela.put(nome, new EntradaFuncao(nome, tipoRetorno, tiposArgumentos));
     }
 
+
     // Obter símbolo (pode ser variável ou função)
     public Object getSimbolo(String nome) {
         if (tabela.containsKey(nome)) return tabela.get(nome);

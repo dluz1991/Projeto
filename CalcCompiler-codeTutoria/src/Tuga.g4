@@ -3,8 +3,8 @@ grammar Tuga;
 prog    : varDeclaration* functionDecl+ EOF;
 
 functionDecl : 'funcao' ID LPAREN formalParameters? RPAREN(':' TYPE)? bloco;
-
-formalParameters : ID ':'TYPE (',' ID ':' TYPE)*;
+formalParameter:ID ':'TYPE;
+formalParameters : formalParameter (',' formalParameter)*;
 bloco : 'inicio' varDeclaration* stat* 'fim' ;
 
 varDeclaration: ID(','ID)* ':' TYPE? SCOMMA;
@@ -15,7 +15,7 @@ stat   : ID '<-' expr SCOMMA                           # Afetacao
        | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
        | 'escreve' expr SCOMMA                         # Escreve
        | 'retorna' expr SCOMMA                          # Retorna
-       | ID LPAREN expr? RPAREN SCOMMA       # ChamadaFuncao
+       | ID LPAREN expr? RPAREN SCOMMA         # ChamadaFuncao
        | SCOMMA                                        # Vazia
        ;
 
