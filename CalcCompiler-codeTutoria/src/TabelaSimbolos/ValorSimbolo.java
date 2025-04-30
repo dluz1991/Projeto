@@ -3,16 +3,12 @@ package TabelaSimbolos;
 import CodeGenerator.Tipo;
 
 public class ValorSimbolo {
-    private final Tipo tipo; // tipo do simbolo
-    private final int index; // endereco na memoria
-    // valor do simbolo
+    private final Tipo tipo;
+    private final int index;
 
     public ValorSimbolo(Tipo tipo, int endereco) {
-
         this.tipo = tipo;
-
         this.index = endereco;
-
     }
 
     public Tipo getTipo() {
@@ -22,5 +18,4 @@ public class ValorSimbolo {
     public int getIndex() {
         return index;
     }
-
 }

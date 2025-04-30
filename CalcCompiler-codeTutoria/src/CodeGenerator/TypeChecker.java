@@ -35,7 +35,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
         for (var decl : ctx.varDeclaration()) visit(decl);
-        for (var stat : ctx.stat()) visit(stat);
+        for (var func : ctx.stat()) visit(stat);
         return null;
     }
 
@@ -54,8 +54,8 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
 
         for (var id : ctx.ID()) {
             String nome = id.getText();
-            if (!tabelaSimbolos.containsVar(nome)) {
-                tabelaSimbolos.putSimbolo(nome, tipo, addr++);
+            if (!tabelaSimbolos.containsSimbolo(nome)) {
+                tabelaSimbolos.putVariavel(nome, tipo, addr++);
             } else {
                 System.out.printf("erro na linha %d: variavel '%s' ja foi declarada%n", ctx.start.getLine(), nome);
                 typeErrorCount++;
@@ -68,7 +68,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
         visit(ctx.expr());
         String nomeVar = ctx.ID().getText();
-        ValorSimbolo entrada = tabelaSimbolos.getSimbolo(nomeVar);
+        ValorSimbolo entrada =(ValorSimbolo) tabelaSimbolos.getSimbolo(nomeVar);
 
         Tipo tipoExpr = getTipo(ctx.expr());
 
@@ -134,7 +134,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     @Override
     public Void visitVar(TugaParser.VarContext ctx) {
         String nome = ctx.ID().getText();
-        ValorSimbolo entrada = tabelaSimbolos.getSimbolo(nome);
+        ValorSimbolo entrada = (ValorSimbolo) tabelaSimbolos.getSimbolo(nome);
         if (entrada == null) {
             System.err.printf("erro na linha %d: variavel '%s' nao foi declarada%n", ctx.start.getLine(), nome);
             typeErrorCount++;
