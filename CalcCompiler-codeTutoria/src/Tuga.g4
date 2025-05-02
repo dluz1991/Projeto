@@ -5,6 +5,7 @@ prog    : varDeclaration* functionDecl+ EOF;
 functionDecl : 'funcao' ID LPAREN formalParameters? RPAREN(':' TYPE)? bloco;
 formalParameter:ID ':'TYPE;
 formalParameters : formalParameter (',' formalParameter)*;
+
 bloco : 'inicio' varDeclaration* stat* 'fim' ;
 
 varDeclaration: ID(','ID)* ':' TYPE? SCOMMA;
