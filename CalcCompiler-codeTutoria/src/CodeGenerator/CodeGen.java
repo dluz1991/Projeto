@@ -14,67 +14,168 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 public class CodeGen extends TugaBaseVisitor<Void> {
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
-    private ConstantPool constantPool = new ConstantPool();
-    private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
-    private int addr;
+    private ConstantPool constantPool;
+    private TabelaSimbolos tabelaSimbolos;
     private final Map<String, Integer> labelsFuncoes = new HashMap<>();
-    private boolean insideFuntion = false;
-
+    private String currentFunction = "";
+    private Map<String, Integer> localVars = new HashMap<>();
+    private int nextLocalVarIndex = 1; // Start at 1 since parameters have negative indices
+    private int functionParamCount = 0;
 
     public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
         this.typeChecker = checker;
         this.constantPool = constantPool;
         this.tabelaSimbolos = tabelaSimbolos;
-        this.addr = typeChecker.getAddr();
     }
 
     private void visitAndConvert(ParseTree expr, Tipo target) {
         Tipo origem = typeChecker.getTipo(expr);
-        visit(expr); // visita primeiro
-        if (origem != target) emitConversion(origem, target);
+        visit(expr); // visit first
+        if (origem != target && origem != Tipo.ERRO && target != Tipo.ERRO) {
+            emitConversion(origem, target);
+        }
     }
 
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        // Gerar jump inicial para 'principal' (vamos corrigir mais à frente)
+        // Generate initial jump to 'principal'
         int jumpToMain = code.size();
-        emit(OpCode.jump, 0); // Placeholder, será ajustado depois
+        emit(OpCode.call, 0); // Placeholder, will be fixed later
+        emit(OpCode.halt);
 
-        // Visitar todas as funções (isto define os labels!)
+        // Visit all functions (this defines labels)
         for (var func : ctx.functionDecl()) {
-            visit(func); // os labelsFuncoes são preenchidos dentro de visitFunctionDecl
+            visit(func);
         }
 
-        // Corrigir o jump para principal
+        // Fix the jump to 'principal'
         Integer labelPrincipal = labelsFuncoes.get("principal");
         if (labelPrincipal == null) {
-            System.err.println("Erro: função principal() não encontrada.");
+            System.err.println("Error: principal() function not found.");
         } else {
             ((Instruction1Arg) code.get(jumpToMain)).setArg(labelPrincipal);
         }
 
-        emit(OpCode.halt);
         return null;
     }
-
 
     @Override
     public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
         String nome = ctx.ID().getText();
+        currentFunction = nome;
+        localVars.clear();
+        nextLocalVarIndex = 1;
 
-        // Guardar label da função (posição atual do código)
+        // Count parameters for this function
+        functionParamCount = (ctx.formalParameters() != null) ?
+                ctx.formalParameters().formalParameter().size() : 0;
+
+        // Save the label for the function (current code position)
         int label = code.size();
         labelsFuncoes.put(nome, label);
 
-        // Alocar espaço para variáveis locais (inclui parâmetros)
-        int numLocais = typeChecker.getAddr(); // foi definido ao visitar a função no TypeChecker
-        emit(OpCode.lalloc, numLocais);
+        // Count local variable declarations in function body
+        int localVarCount = countLocalVars(ctx.bloco());
+        if (localVarCount > 0) {
+            emit(OpCode.lalloc, localVarCount);
+        }
 
-        // Corpo da função
+        // Visit function body
         visit(ctx.bloco());
 
-        // Se for void e não houver 'retorna', ainda assim termina com ret
-        emit(OpCode.ret, 0);
+        // Ensure function has a return statement if it's not a void function
+        boolean hasExplicitReturn = hasReturnStatement(ctx.bloco());
+        if (!hasExplicitReturn) {
+            // For void functions, add default return
+            if (ctx.TYPE() == null) {
+                emit(OpCode.ret, functionParamCount);
+            }
+        }
+
+        currentFunction = "";
+        return null;
+    }
+
+    private int countLocalVars(TugaParser.BlocoContext ctx) {
+        int count = 0;
+        for (var varDecl : ctx.varDeclaration()) {
+            count += varDecl.ID().size();
+        }
+        return count;
+    }
+
+    private boolean hasReturnStatement(TugaParser.BlocoContext ctx) {
+        for (var stat : ctx.stat()) {
+            if (stat instanceof TugaParser.RetornaContext) {
+                return true;
+            } else if (stat instanceof TugaParser.BlocoStatContext) {
+                if (hasReturnStatement(((TugaParser.BlocoStatContext) stat).bloco())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
+        if (currentFunction.isEmpty()) {
+            // Global variables
+            int count = ctx.ID().size();
+            if (count > 0) {
+                emit(OpCode.galloc, count);
+            }
+        } else {
+            // Local variables - map names to stack indices
+            for (var id : ctx.ID()) {
+                String varName = id.getText();
+                localVars.put(varName, nextLocalVarIndex++);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
+        String nome = ctx.ID().getText();
+        VarSimbolo simbolo = tabelaSimbolos.getVar(nome);
+        if (simbolo == null) return null;
+
+        Tipo tipoAlvo = simbolo.getTipo();
+        visitAndConvert(ctx.expr(), tipoAlvo);
+
+        // Determine if this is a local, parameter, or global variable
+        if (!currentFunction.isEmpty() && localVars.containsKey(nome)) {
+            // Local variable
+            emit(OpCode.lstore, localVars.get(nome));
+        } else if (simbolo.getIndex() < 0) {
+            // Parameter (negative index)
+            emit(OpCode.lstore, simbolo.getIndex());
+        } else {
+            // Global variable
+            emit(OpCode.gstore, simbolo.getIndex());
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitVar(TugaParser.VarContext ctx) {
+        String nome = ctx.ID().getText();
+        VarSimbolo simbolo = tabelaSimbolos.getVar(nome);
+        if (simbolo == null) return null;
+
+        // Determine if this is a local, parameter, or global variable
+        if (!currentFunction.isEmpty() && localVars.containsKey(nome)) {
+            // Local variable
+            emit(OpCode.lload, localVars.get(nome));
+        } else if (simbolo.getIndex() < 0) {
+            // Parameter (negative index)
+            emit(OpCode.lload, simbolo.getIndex());
+        } else {
+            // Global variable
+            emit(OpCode.gload, simbolo.getIndex());
+        }
 
         return null;
     }
@@ -82,34 +183,45 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     @Override
     public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
         String nome = ctx.ID().getText();
+        FuncaoSimbolo func = tabelaSimbolos.getFuncao(nome);
+        if (func == null) return null;
 
-        // Avaliar argumentos (da esquerda para a direita)
+        // Evaluate and push all arguments in order
         if (ctx.exprList() != null) {
             for (var expr : ctx.exprList().expr()) {
                 visit(expr);
             }
         }
 
-        // Emitir call
-        int label = labelsFuncoes.get(nome);
-        emit(OpCode.call, label);
+        // Call the function
+        Integer label = labelsFuncoes.get(nome);
+        if (label != null) {
+            emit(OpCode.call, label);
+        } else {
+            System.err.println("Error: Function label not found for " + nome);
+        }
 
         return null;
     }
+
     @Override
     public Void visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) {
         String nome = ctx.ID().getText();
+        FuncaoSimbolo func = tabelaSimbolos.getFuncao(nome);
+        if (func == null) return null;
 
-        // Avaliar argumento se existir
+        // Push single argument if present
         if (ctx.expr() != null) {
             visit(ctx.expr());
         }
 
-        int label = labelsFuncoes.get(nome);
-        emit(OpCode.call, label);
-
-        // Função usada como instrução → descartamos o valor de retorno
-        emit(OpCode.pop);
+        // Call the function
+        Integer label = labelsFuncoes.get(nome);
+        if (label != null) {
+            emit(OpCode.call, label);
+        } else {
+            System.err.println("Error: Function label not found for " + nome);
+        }
 
         return null;
     }
@@ -118,96 +230,23 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public Void visitRetorna(TugaParser.RetornaContext ctx) {
         if (ctx.expr() != null) {
             visit(ctx.expr());
-            emit(OpCode.retval, 1); // retorna 1 valor
+            emit(OpCode.retval, functionParamCount);
         } else {
-            emit(OpCode.ret, 0); // retorna sem valor
+            emit(OpCode.ret, functionParamCount);
         }
-        return null;
-    }
-
-
-    @Override
-    public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
-        Tipo tipo = Tipo.STRING; // tipo default
-        if (ctx.TYPE() != null) {
-            tipo = switch (ctx.TYPE().getText()) {
-                case "inteiro" -> Tipo.INT;
-                case "real" -> Tipo.REAL;
-                case "string" -> Tipo.STRING;
-                case "booleano" -> Tipo.BOOL;
-                default -> Tipo.ERRO;
-            };
-        }
-
-        int count = 0;
-        for (TerminalNode id : ctx.ID()) {
-            String nome = id.getText();
-            count++;
-        }
-        //conta o numero de variaveis por linha e emite codigo
-        if (count > 0) {
-            emit(OpCode.galloc, count);
-        }
-
-
-        return null;
-    }
-
-
-    @Override
-    public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
-        String nome = ctx.ID().getText();
-        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getSimbolo(nome);
-        if (simbolo == null) return null;
-        Tipo tipoAlvo = simbolo.getTipo();
-        visitAndConvert(ctx.expr(), tipoAlvo);
-        emit(OpCode.gstore, simbolo.getIndex());
-
-
         return null;
     }
 
     @Override
     public Void visitBloco(TugaParser.BlocoContext ctx) {
-        for (TugaParser.StatContext s : ctx.stat()) {
-            visit(s);
+        // Visit variable declarations first
+        for (var varDecl : ctx.varDeclaration()) {
+            visit(varDecl);
         }
-        return null;
-    }
 
-    @Override
-    public Void visitEquanto(TugaParser.EquantoContext ctx) {
-        int beginWhile = code.size();
-
-        // VISITA diretamente a expressão — para garantir que o visitRelational é chamado
-        visitAndConvert(ctx.expr(), Tipo.BOOL);
-
-        emit(OpCode.jumpf, 0);
-        int jumpFIndex = code.size() - 1;
-
-        visit(ctx.stat());
-
-        emit(OpCode.jump, beginWhile);
-        ((Instruction1Arg) code.get(jumpFIndex)).setArg(code.size());
-
-        return null;
-    }
-
-
-    @Override
-    public Void visitSe(TugaParser.SeContext ctx) {
-        visitAndConvert(ctx.expr(), Tipo.BOOL);
-        emit(OpCode.jumpf, 0);
-        int jfIdx = code.size() - 1;
-        visit(ctx.stat(0));
-        if (ctx.stat().size() > 1) {
-            emit(OpCode.jump, 0);
-            int jIdx = code.size() - 1;
-            ((Instruction1Arg) code.get(jfIdx)).setArg(code.size());
-            visit(ctx.stat(1));
-            ((Instruction1Arg) code.get(jIdx)).setArg(code.size());
-        } else {
-            ((Instruction1Arg) code.get(jfIdx)).setArg(code.size());
+        // Then visit statements
+        for (var stat : ctx.stat()) {
+            visit(stat);
         }
         return null;
     }
@@ -216,6 +255,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public Void visitEscreve(TugaParser.EscreveContext ctx) {
         visit(ctx.expr());
         Tipo tipo = typeChecker.getTipo(ctx.expr());
+
         switch (tipo) {
             case INT -> emit(OpCode.iprint);
             case REAL -> emit(OpCode.dprint);
@@ -226,18 +266,61 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitVazia(TugaParser.VaziaContext ctx) {
+    public Void visitEquanto(TugaParser.EquantoContext ctx) {
+        int beginWhile = code.size();
+
+        // Evaluate condition (must be boolean)
+        visitAndConvert(ctx.expr(), Tipo.BOOL);
+
+        // Jump to end if condition is false
+        emit(OpCode.jumpf, 0);
+        int jumpFIndex = code.size() - 1;
+
+        // Execute the statement
+        visit(ctx.stat());
+
+        // Jump back to condition
+        emit(OpCode.jump, beginWhile);
+
+        // Fix the jumpf instruction to point past the loop
+        ((Instruction1Arg) code.get(jumpFIndex)).setArg(code.size());
+
         return null;
     }
 
     @Override
-    public Void visitVar(TugaParser.VarContext ctx) {
-        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getSimbolo(ctx.ID().getText());
+    public Void visitSe(TugaParser.SeContext ctx) {
+        // Evaluate condition (must be boolean)
+        visitAndConvert(ctx.expr(), Tipo.BOOL);
 
-        if (simbolo != null) emit(OpCode.gload, simbolo.getIndex());
+        // Jump to else/end if condition is false
+        emit(OpCode.jumpf, 0);
+        int jumpFIndex = code.size() - 1;
+
+        // Execute 'if' branch
+        visit(ctx.stat(0));
+
+        // If there's an 'else' branch
+        if (ctx.stat().size() > 1) {
+            // Jump past else branch when 'if' branch completes
+            emit(OpCode.jump, 0);
+            int jumpIndex = code.size() - 1;
+
+            // Fix jumpf to point to else branch
+            ((Instruction1Arg) code.get(jumpFIndex)).setArg(code.size());
+
+            // Execute 'else' branch
+            visit(ctx.stat(1));
+
+            // Fix jump to point to end of if-else
+            ((Instruction1Arg) code.get(jumpIndex)).setArg(code.size());
+        } else {
+            // No else branch, fix jumpf to point to end of if
+            ((Instruction1Arg) code.get(jumpFIndex)).setArg(code.size());
+        }
+
         return null;
     }
-
 
     @Override
     public Void visitInt(TugaParser.IntContext ctx) {
@@ -245,12 +328,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Visita o nó de Reais e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitReal(TugaParser.RealContext ctx) {
         double val = Double.parseDouble(ctx.getText());
@@ -259,148 +336,106 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Visita o nó de Booleanos e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitBool(TugaParser.BoolContext ctx) {
-        if (ctx.getText().equals("verdadeiro")) emit(OpCode.tconst);
-        else if (ctx.getText().equals("falso")) emit(OpCode.fconst);
+        if (ctx.getText().equals("verdadeiro")) {
+            emit(OpCode.tconst);
+        } else {
+            emit(OpCode.fconst);
+        }
         return null;
     }
 
-    /**
-     * Visita o nó de String e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
-
     @Override
     public Void visitString(TugaParser.StringContext ctx) {
-        String text = ctx.getText().substring(1, ctx.getText().length() - 1); // remove aspas
+        String text = ctx.getText();
+        // Remove quotes
+        text = text.substring(1, text.length() - 1);
         int index = constantPool.addString(text);
         emit(OpCode.sconst, index);
         return null;
     }
 
-    /**
-     * Visita o nó de Parens e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitParens(TugaParser.ParensContext ctx) {
         visit(ctx.expr());
         return null;
     }
 
-    /**
-     * Visita o nó de Unary e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitUnary(TugaParser.UnaryContext ctx) {
         visit(ctx.expr());
-        Tipo tipo = typeChecker.getTipo(ctx);
+        Tipo tipo = typeChecker.getTipo(ctx.expr());
+
         if (ctx.op.getType() == TugaParser.MINUS) {
-            if (tipo == Tipo.INT) emit(OpCode.iuminus);
-            else if (tipo == Tipo.REAL) emit(OpCode.duminus);
-            else System.out.println("Erro: operação - inválida para tipo " + tipo);
+            if (tipo == Tipo.INT) {
+                emit(OpCode.iuminus);
+            } else if (tipo == Tipo.REAL) {
+                emit(OpCode.duminus);
+            }
         } else if (ctx.op.getType() == TugaParser.NOT) {
-            if (tipo == Tipo.BOOL) emit(OpCode.not);
-            else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
+            if (tipo == Tipo.BOOL) {
+                emit(OpCode.not);
+            }
         }
         return null;
     }
 
-    /**
-     * Visita o nó de AddSub e gera o bytecode para adiçao e subtraçao.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
         Tipo tipo = typeChecker.getTipo(ctx);
-
-        if (tipo == Tipo.ERRO) {
-            System.err.println("Erro de tipo na expressão.");
-            return null;
-        }
         String op = ctx.op.getText();
-        switch (tipo) {
-            case INT -> {
-                visitAndConvert(ctx.expr(0), tipo);
-                visitAndConvert(ctx.expr(1), tipo);
-                if (op.equals("+")) emit(OpCode.iadd);
-                else if (op.equals("-")) emit(OpCode.isub);
-            }
-            case REAL -> {
-                visitAndConvert(ctx.expr(0), tipo);
-                visitAndConvert(ctx.expr(1), tipo);
-                if (op.equals("+")) emit(OpCode.dadd);
-                else if (op.equals("-")) emit(OpCode.dsub);
-            }
-            case STRING -> {
+
+        if (tipo == Tipo.STRING && op.equals("+")) {
+            // String concatenation
+            visitAndConvert(ctx.expr(0), Tipo.STRING);
+            visitAndConvert(ctx.expr(1), Tipo.STRING);
+            emit(OpCode.sconcat);
+        } else {
+            // Numeric operations
+            visitAndConvert(ctx.expr(0), tipo);
+            visitAndConvert(ctx.expr(1), tipo);
+
+            if (tipo == Tipo.INT) {
                 if (op.equals("+")) {
-                    visitAndConvert(ctx.expr(0), Tipo.STRING);
-                    visitAndConvert(ctx.expr(1), Tipo.STRING);
-                    emit(OpCode.sconcat);
+                    emit(OpCode.iadd);
+                } else {
+                    emit(OpCode.isub);
+                }
+            } else if (tipo == Tipo.REAL) {
+                if (op.equals("+")) {
+                    emit(OpCode.dadd);
+                } else {
+                    emit(OpCode.dsub);
                 }
             }
-            default -> System.err.println("Erro: tipo não suportado em AddSub");
         }
         return null;
     }
 
-    /**
-     * Visita o nó de MulDiv e gera o bytecode para multiplicação, divisão e módulo.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         Tipo tipo = typeChecker.getTipo(ctx);
+        String op = ctx.op.getText();
+
         visitAndConvert(ctx.expr(0), tipo);
         visitAndConvert(ctx.expr(1), tipo);
-        if (tipo == Tipo.ERRO) {
-            System.err.println("Erro de tipo na expressão.");
-            return null;
-        }
-        String op = ctx.op.getText();
-        switch (tipo) {
-            case INT -> {
-                switch (op) {
-                    case "*" -> emit(OpCode.imult);
-                    case "/" -> emit(OpCode.idiv);
-                    case "%" -> emit(OpCode.imod);
-                }
+
+        if (tipo == Tipo.INT) {
+            switch (op) {
+                case "*" -> emit(OpCode.imult);
+                case "/" -> emit(OpCode.idiv);
+                case "%" -> emit(OpCode.imod);
             }
-            case REAL -> {
-                switch (op) {
-                    case "*" -> emit(OpCode.dmult);
-                    case "/" -> emit(OpCode.ddiv);
-                }
+        } else if (tipo == Tipo.REAL) {
+            switch (op) {
+                case "*" -> emit(OpCode.dmult);
+                case "/" -> emit(OpCode.ddiv);
             }
-            default -> System.err.println("Erro: tipo não suportado em MulDiv");
         }
         return null;
     }
 
-    /**
-     * Visita o nó de And e gera o bytecode correspondente para And.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitAnd(TugaParser.AndContext ctx) {
         visitAndConvert(ctx.expr(0), Tipo.BOOL);
@@ -408,13 +443,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         emit(OpCode.and);
         return null;
     }
-
-    /**
-     * Visita o nó de Or e gera o bytecode correspondente para Or.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
 
     @Override
     public Void visitOr(TugaParser.OrContext ctx) {
@@ -424,148 +452,71 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Visita o nó de Relational e gera o bytecode correspondente para operações relacionais.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitRelational(TugaParser.RelationalContext ctx) {
         Tipo t1 = typeChecker.getTipo(ctx.expr(0));
         Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-
-        Tipo tipoFinal;
-        if (t1 == Tipo.REAL || t2 == Tipo.REAL) tipoFinal = Tipo.REAL;
-        else if (t1 == Tipo.INT && t2 == Tipo.INT) tipoFinal = Tipo.INT;
-        else if (t1 == Tipo.STRING && t2 == Tipo.STRING) tipoFinal = Tipo.STRING;
-        else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL) tipoFinal = Tipo.BOOL;
-        else {
-            System.err.println("Tipos incompatíveis em Relational");
-            return null;
-        }
-
         String op = ctx.op.getText();
 
-        switch (tipoFinal) {
-            case INT: {
+        // Determine common type for comparison
+        Tipo tipoComp;
+        if (t1 == Tipo.REAL || t2 == Tipo.REAL) {
+            tipoComp = Tipo.REAL;
+        } else if (t1 == Tipo.INT && t2 == Tipo.INT) {
+            tipoComp = Tipo.INT;
+        } else if (t1 == Tipo.STRING && t2 == Tipo.STRING) {
+            tipoComp = Tipo.STRING;
+        } else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL) {
+            tipoComp = Tipo.BOOL;
+        } else {
+            tipoComp = Tipo.ERRO;
+        }
+
+        // Visit and convert both expressions
+        visitAndConvert(ctx.expr(0), tipoComp);
+        visitAndConvert(ctx.expr(1), tipoComp);
+
+        // Emit appropriate comparison operation
+        switch (tipoComp) {
+            case INT -> {
                 switch (op) {
-                    // Trocar a ordem das visitas para evitar conversões desnecessárias
-                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
-                    case "<":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ilt);
-                        break;
-                    case ">":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ilt);
-                        break;
-                    case "<=":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ileq);
-                        break;
-                    case ">=":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ileq);
-                        break;
-                    case "igual":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ieq);
-                        break;
-                    case "diferente":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ineq);
-                        break;
-                    default:
-                        erroOpRel(op);
+                    case "<" -> emit(OpCode.ilt);
+                    case ">" -> emit(OpCode.ilt); // Swapped operands
+                    case "<=" -> emit(OpCode.ileq);
+                    case ">=" -> emit(OpCode.ileq); // Swapped operands
+                    case "igual" -> emit(OpCode.ieq);
+                    case "diferente" -> emit(OpCode.ineq);
                 }
-                break;
             }
-            case REAL: {
+            case REAL -> {
                 switch (op) {
-                    // Trocar a ordem das visitas para evitar conversões desnecessárias
-                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
-                    case "<":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dlt);
-                        break;
-                    case ">":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dlt);
-                        break;
-                    case "<=":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dleq);
-                        break;
-                    case ">=":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dleq);
-                        break;
-                    case "igual":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.deq);
-                        break;
-                    case "diferente":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dneq);
-                        break;
-                    default:
-                        erroOpRel(op);
+                    case "<" -> emit(OpCode.dlt);
+                    case ">" -> emit(OpCode.dlt); // Swapped operands
+                    case "<=" -> emit(OpCode.dleq);
+                    case ">=" -> emit(OpCode.dleq); // Swapped operands
+                    case "igual" -> emit(OpCode.deq);
+                    case "diferente" -> emit(OpCode.dneq);
                 }
-                break;
             }
-            case STRING: {
-                visitAndConvert(ctx.expr(0), tipoFinal);
-                visitAndConvert(ctx.expr(1), tipoFinal);
+            case STRING -> {
                 switch (op) {
                     case "igual" -> emit(OpCode.seq);
                     case "diferente" -> emit(OpCode.sneq);
-                    default -> erroOpRel(op);
                 }
-                break;
             }
-            case BOOL: {
-
-                visitAndConvert(ctx.expr(0), tipoFinal);
-                visitAndConvert(ctx.expr(1), tipoFinal);
+            case BOOL -> {
                 switch (op) {
                     case "igual" -> emit(OpCode.beq);
                     case "diferente" -> emit(OpCode.bneq);
-                    default -> erroOpRel(op);
                 }
-                break;
             }
-
         }
-
         return null;
     }
 
-    //____________________ METODOS AUXILIARES______________________
-    private void erroOpRel(String op) {
-        System.err.println("Operação relacional inválida: " + op);
-    }
-
-    /**
-     * Fução auxiliar para emitir a conversão de tipos.
-     *
-     * @param de, para. O tipo de origem e o tipo de destino.
-     * @return null
-     */
     private void emitConversion(Tipo de, Tipo para) {
         if (de == para) return;
+
         switch (de) {
             case INT -> {
                 if (para == Tipo.REAL) emit(OpCode.itod);
@@ -577,25 +528,13 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             case BOOL -> {
                 if (para == Tipo.STRING) emit(OpCode.btos);
             }
-            default -> System.err.println("Conversão não suportada: " + de + " -> " + para);
         }
     }
 
-    /**
-     * Emite uma instrução de bytecode.
-     *
-     * @param opc O código da operação a emitir.
-     */
     public void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
 
-    /**
-     * Emite uma instrução de bytecode com um argumento.
-     *
-     * @param opc O código da operação a emitir.
-     * @param val O valor do argumento.
-     */
     public void emit(OpCode opc, int val) {
         code.add(new Instruction1Arg(opc, val));
     }
@@ -610,8 +549,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         try (DataOutputStream dout = new DataOutputStream(new FileOutputStream(filename))) {
             for (Instruction inst : code)
                 inst.writeTo(dout);
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
     }
 
