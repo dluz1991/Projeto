@@ -39,7 +39,7 @@ public class VirtualMachine {
         decode(bytecodes);
         this.IP = 0;
         this.tabelaSimbolos = tabelaSimbolos;
-        this.global = new Object[tabelaSimbolos.getSizeTable()];
+        //this.global = new Object[tabelaSimbolos.getSizeTable()];
 
     }
 
