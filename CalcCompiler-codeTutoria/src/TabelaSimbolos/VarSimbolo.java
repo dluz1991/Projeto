@@ -2,13 +2,15 @@ package TabelaSimbolos;
 
 import CodeGenerator.Tipo;
 
-public class ValorSimbolo {
+public class VarSimbolo {
     private final Tipo tipo;
     private final int index;
+    private final int scope;
 
-    public ValorSimbolo(Tipo tipo, int endereco) {
+    public VarSimbolo(Tipo tipo, int endereco, int scope) {
         this.tipo = tipo;
         this.index = endereco;
+        this.scope = scope;
     }
 
     public Tipo getTipo() {
@@ -17,5 +19,9 @@ public class ValorSimbolo {
 
     public int getIndex() {
         return index;
+    }
+
+    public int getScope() {
+        return scope;
     }
 }

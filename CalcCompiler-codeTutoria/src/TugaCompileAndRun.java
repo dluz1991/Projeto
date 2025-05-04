@@ -1,7 +1,7 @@
 import CodeGenerator.CodeGen;
 import ConstantPool.ConstantPool;
 import CodeGenerator.TypeChecker;
-import TabelaSimbolos.TabelaSimbolos;
+import TabelaSimbolos.*;
 import VM.VirtualMachine;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -71,18 +71,28 @@ public class TugaCompileAndRun {
                 return;
             }
             TabelaSimbolos tabelaSimbolos= new TabelaSimbolos();
+            Enquadramento scope = new Enquadramento();
+
             TugaParser parser = new TugaParser(tokens);
             parser.removeErrorListeners();
             parser.addErrorListener(errorListener);
 
             ParseTree tree = parser.prog();
-
+            ParseTreeWalker walker = new ParseTreeWalker();
             if (errorListener.getNumParsingErrors() > 0) {
                 System.out.println("Input has parsing errors");
                 return;
             }
+            //definiçao dos scopes com os nomes das funçoes
+            DefPhase defPhase = new DefPhase(scope);
+            scope.print();
+            //debugging dos scopes
 
-            TypeChecker checker = new TypeChecker(tabelaSimbolos);
+            //defPhase.printScopes();
+
+            walker.walk(defPhase, tree);
+
+            TypeChecker checker = new TypeChecker(tabelaSimbolos,scope);
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
          //       System.out.println("Input has type checking errors");

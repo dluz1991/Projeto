@@ -3,15 +3,17 @@ package TabelaSimbolos;
 import CodeGenerator.Tipo;
 import java.util.List;
 
-public class EntradaFuncao {
+public class FuncaoSimbolo {
     private final String nome;
     private final Tipo tipoRetorno;
     private final List<Tipo> tiposArgumentos;
+    private final int scope;
 
-    public EntradaFuncao(String nome, Tipo tipoRetorno, List<Tipo> tiposArgumentos) {
+    public FuncaoSimbolo(String nome, Tipo tipoRetorno, List<Tipo> tiposArgumentos, int scope) {
         this.nome = nome;
         this.tipoRetorno = tipoRetorno;
         this.tiposArgumentos = tiposArgumentos;
+        this.scope = scope;
     }
 
     public String getNome() {
@@ -24,5 +26,9 @@ public class EntradaFuncao {
 
     public List<Tipo> getTiposArgumentos() {
         return tiposArgumentos;
+    }
+
+    public int getScope() {
+        return scope;
     }
 }

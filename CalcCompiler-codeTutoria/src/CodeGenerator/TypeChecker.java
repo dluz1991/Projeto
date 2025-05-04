@@ -9,14 +9,15 @@ import java.util.*;
 
 public class TypeChecker extends TugaBaseVisitor<Void> {
     TabelaSimbolos tabelaSimbolos;
-    private int typeErrorCount = 0;
+    private final Enquadramento scope;
     private final Map<ParseTree, Tipo> types = new HashMap<>();
+    private int typeErrorCount = 0;
     private int addr = 0;
     private Tipo tipoRetornoAtual = Tipo.VOID;
 
-
-    public TypeChecker(TabelaSimbolos tabelaSimbolos) {
+    public TypeChecker(TabelaSimbolos tabelaSimbolos, Enquadramento scope) {
         this.tabelaSimbolos = tabelaSimbolos;
+        this.scope = scope;
     }
 
     private Tipo combinarTipos(Tipo t1, Tipo t2) {
@@ -33,14 +34,65 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         };
     }
 
+
+
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        for (var decl : ctx.varDeclaration()) visit(decl);
-        for (var func : ctx.functionDecl()) visit(func);
+         //1.º PASSO - inserir *assinaturas* de todas as funções
+        for (var funcDecl : ctx.functionDecl()) {
 
-        EntradaFuncao principal = (EntradaFuncao) tabelaSimbolos.getSimbolo("principal");
-        if (principal == null) {
-            System.out.println("erro na linha "+ctx.start.getLine()+": falta funcao principal()");
+            String nome = funcDecl.ID().getText();
+
+            /*-- tipo de retorno --*/
+            Tipo tipoRet = Tipo.VOID;
+            if (funcDecl.TYPE() != null) {
+                tipoRet = switch (funcDecl.TYPE().getText()) {
+                    case "inteiro"   -> Tipo.INT;
+                    case "real"      -> Tipo.REAL;
+                    case "string"    -> Tipo.STRING;
+                    case "booleano"  -> Tipo.BOOL;
+                    default          -> Tipo.ERRO;
+                };
+            }
+
+            /*-- lista de tipos dos argumentos --*/
+            List<Tipo> tiposArgs = new ArrayList<>();
+            if (funcDecl.formalParameters() != null) {
+                for (var p : funcDecl.formalParameters().formalParameter()) {
+                    Tipo t = switch (p.TYPE().getText()) {
+                        case "inteiro"   -> Tipo.INT;
+                        case "real"      -> Tipo.REAL;
+                        case "string"    -> Tipo.STRING;
+                        case "booleano"  -> Tipo.BOOL;
+                        default          -> Tipo.ERRO;
+                    };
+                    tiposArgs.add(t);
+                }
+            }
+
+            int escopoFunc = scope.get(nome);
+
+            if (tabelaSimbolos.existeFunc(nome)) {
+                System.err.printf("erro: funcao '%s' duplicada%n", nome);
+                typeErrorCount++;
+            } else {
+                tabelaSimbolos.putFuncao(nome, tipoRet, tiposArgs, escopoFunc);
+            }
+        }
+
+
+         //2.º PASSO - variáveis globais
+
+        for (var decl : ctx.varDeclaration())
+            visit(decl);
+
+        // 3.º PASSO - visitar corpo de cada função
+        for (var funcDecl : ctx.functionDecl())
+            visit(funcDecl);
+         // 4.º PASSO - garantir existência de principal()
+        if (!tabelaSimbolos.existeFunc("principal")) {
+            System.err.printf("erro na linha %d: falta funcao principal()%n",
+                    ctx.start.getLine());
             typeErrorCount++;
         }
         return null;
@@ -48,28 +100,56 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
+
+        /*  tipo explícito ou INT por omissão  */
         Tipo tipo = Tipo.INT;
         if (ctx.TYPE() != null) {
             tipo = switch (ctx.TYPE().getText()) {
-                case "inteiro" -> Tipo.INT;
-                case "real" -> Tipo.REAL;
-                case "string" -> Tipo.STRING;
-                case "booleano" -> Tipo.BOOL;
-                default -> Tipo.ERRO;
+                case "inteiro"   -> Tipo.INT;
+                case "real"      -> Tipo.REAL;
+                case "string"    -> Tipo.STRING;
+                case "booleano"  -> Tipo.BOOL;
+                default          -> Tipo.ERRO;
             };
         }
 
-        for (var id : ctx.ID()) {
-            String nome = id.getText();
-            if (!tabelaSimbolos.containsSimbolo(nome)) {
-                tabelaSimbolos.putVariavel(nome, tipo, addr++);
+        /*  cada identificador da lista  */
+        for (var idTok : ctx.ID()) {
+            String nome      = idTok.getText();
+            int    escopoVar = scope.get(nome);
+
+            /*  já existe símbolo com o mesmo nome neste escopo?  */
+            boolean existe =
+                    (tabelaSimbolos.existeVar(nome)  && tabelaSimbolos.scopeVar (nome)==escopoVar) ||
+                            (tabelaSimbolos.existeFunc(nome) && tabelaSimbolos.scopeFunc(nome)==escopoVar);
+
+            if (!existe) {
+                tabelaSimbolos.putVariavel(nome, tipo, addr++, escopoVar);
             } else {
-                System.out.printf("erro na linha %d: variavel '%s' ja foi declarada%n", ctx.start.getLine(), nome);
+                System.err.printf("erro na linha %d: simbolo '%s' ja existe no mesmo escopo%n",
+                        idTok.getSymbol().getLine(), nome);
                 typeErrorCount++;
             }
         }
         return null;
     }
+
+
+    @Override public Void visitVar(TugaParser.VarContext ctx){
+        String nome = ctx.ID().getText();
+
+        VarSimbolo var = tabelaSimbolos.getVar(nome);   // <-- agora assim
+        if (var == null){
+            System.err.printf("erro na linha %d: variavel '%s' nao foi declarada%n",
+                    ctx.start.getLine(),nome);
+            typeErrorCount++;
+            types.put(ctx,Tipo.ERRO);
+        }else{
+            types.put(ctx,var.getTipo());
+        }
+        return null;
+    }
+//---  FIM ALTERAÇÃO 2  -------------------------------
 
     @Override
     public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
@@ -80,63 +160,47 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         if (ctx.TYPE() != null) {
             tipoRetorno = switch (ctx.TYPE().getText()) {
                 case "inteiro" -> Tipo.INT;
-                case "real"    -> Tipo.REAL;
-                case "string"  -> Tipo.STRING;
-                case "booleano"-> Tipo.BOOL;
-                default        -> Tipo.ERRO;
+                case "real" -> Tipo.REAL;
+                case "string" -> Tipo.STRING;
+                case "booleano" -> Tipo.BOOL;
+                default -> Tipo.ERRO;
             };
         }
 
-        if (tabelaSimbolos.containsSimbolo(nome)) {
-            System.err.printf("erro na linha %d: '%s' já foi declarado%n", ctx.start.getLine(), nome);
-            typeErrorCount++;
-            return null;
-        }
-
-        // Extrair parâmetros
-        List<Tipo> tiposArgs = new ArrayList<>();
-        Set<String> nomes = new HashSet<>();
-
-        if (ctx.formalParameters() != null) {
-            for (var param : ctx.formalParameters().formalParameter()) {
-                String nomeParam = param.ID().getText();
-                if (nomes.contains(nomeParam)) {
-                    System.err.printf("erro na linha %d: '%s' duplicado%n", param.start.getLine(), nomeParam);
-                    typeErrorCount++;
-                    tiposArgs.add(Tipo.ERRO);
-                    continue;
-                }
-                nomes.add(nomeParam);
-
-                Tipo tipo = switch (param.TYPE().getText()) {
-                    case "inteiro" -> Tipo.INT;
-                    case "real"    -> Tipo.REAL;
-                    case "string"  -> Tipo.STRING;
-                    case "booleano"-> Tipo.BOOL;
-                    default        -> Tipo.ERRO;
-                };
-                tiposArgs.add(tipo);
-            }
-        }
-
-        // Regista a função
-        tabelaSimbolos.putFuncao(nome, tipoRetorno, tiposArgs);
+        tipoRetornoAtual = tipoRetorno;
 
         // Novo escopo local
         TabelaSimbolos escopoLocal = new TabelaSimbolos(tabelaSimbolos);
         int localAddr = 0;
+        Set<String> nomes = new HashSet<>();
+        List<Tipo> tiposArgs = new ArrayList<>();
 
         if (ctx.formalParameters() != null) {
             var parametros = ctx.formalParameters().formalParameter();
             for (int i = 0; i < parametros.size(); i++) {
                 String id = parametros.get(i).ID().getText();
-                Tipo tipo = tiposArgs.get(i);
-                escopoLocal.putVariavel(id, tipo, localAddr++);
+                Tipo tipo = switch (parametros.get(i).TYPE().getText()) {
+                    case "inteiro" -> Tipo.INT;
+                    case "real" -> Tipo.REAL;
+                    case "string" -> Tipo.STRING;
+                    case "booleano" -> Tipo.BOOL;
+                    default -> Tipo.ERRO;
+                };
+                tiposArgs.add(tipo);
+
+                if (nomes.contains(id)) {
+                    System.err.printf("erro na linha %d: parâmetro '%s' duplicado%n", parametros.get(i).start.getLine(), id);
+                    typeErrorCount++;
+                    continue;
+                }
+
+                nomes.add(id);
+                escopoLocal.putVariavel(id, tipo, localAddr++, scope.get(id));
             }
         }
 
-        // Verificar corpo da função com novo TypeChecker
-        TypeChecker checkerInterno = new TypeChecker(escopoLocal);
+        // Verificar corpo da função com um novo TypeChecker
+        TypeChecker checkerInterno = new TypeChecker(escopoLocal, scope);
         checkerInterno.tipoRetornoAtual = tipoRetorno;
         checkerInterno.addr = localAddr;
         checkerInterno.visit(ctx.bloco());
@@ -148,92 +212,60 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     }
 
 
+
+
+    /*------------------------------------------------------------------
+     *  visitChamadaFuncaoExpr
+     *------------------------------------------------------------------*/
     @Override
     public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
+
         String nome = ctx.ID().getText();
-        Object simbolo = tabelaSimbolos.getSimbolo(nome);
+        FuncaoSimbolo func = tabelaSimbolos.getFuncao(nome);
 
-//        if (!(simbolo instanceof EntradaFuncao func)) {
-//            System.err.printf("erro na linha %d: '%s' nao é uma função%n", ctx.start.getLine(), nome);
-//            typeErrorCount++;
-//            types.put(ctx, Tipo.ERRO);
-//            return null;
-//        }
-
-        List<Tipo> tiposEsperados = func.getTiposArgumentos();
-        List<Tipo> tiposReais = new ArrayList<>();
-
-        if (ctx.exprList() != null) {
-            for (var expr : ctx.exprList().expr()) {
-                visit(expr);
-                tiposReais.add(getTipo(expr));
-            }
-        }
-
-        if (tiposEsperados.size() != tiposReais.size()) {
-            System.err.printf("erro na linha %d: número de argumentos inválido para função '%s'%n", ctx.start.getLine(), nome);
+        /*  símbolo não é função?  */
+        if (func == null) {
+            System.err.printf("erro na linha %d: '%s' nao e uma função%n",
+                    ctx.start.getLine(), nome);
             typeErrorCount++;
             types.put(ctx, Tipo.ERRO);
             return null;
         }
 
-        for (int i = 0; i < tiposEsperados.size(); i++) {
-            Tipo esperado = tiposEsperados.get(i);
-            Tipo real = tiposReais.get(i);
-            if (esperado != real && !(esperado == Tipo.REAL && real == Tipo.INT)) {
-                System.err.printf("erro na linha %d: tipo do argumento %d inválido na função '%s'%n", ctx.start.getLine(), i+1, nome);
-                typeErrorCount++;
-            }
-        }
-
-        types.put(ctx, func.getTipoRetorno());
-        return null;
-    }
-    @Override
-    public Void visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) {
-        String nome = ctx.ID().getText();
-        Object simbolo = tabelaSimbolos.getSimbolo(nome);
-
-        if (!(simbolo instanceof EntradaFuncao func)) {
-            System.err.printf("erro na linha %d: '%s' nao é uma função%n", ctx.start.getLine(), nome);
-            typeErrorCount++;
-            return null;
-        }
-
-        // Verifica se a função tem retorno (não pode)
-        if (func.getTipoRetorno() != Tipo.VOID) {
-            System.err.printf("erro na linha %d: chamada da função '%s' como instrução mas esta retorna valor%n", ctx.start.getLine(), nome);
-            typeErrorCount++;
-        }
-
-        // Verificar número e tipo de argumentos
+        /*  tipos esperados vs. reais dos argumentos  */
         List<Tipo> esperados = func.getTiposArgumentos();
+        List<Tipo> reais     = new ArrayList<>();
 
-        if (ctx.expr() == null) {
-            if (!esperados.isEmpty()) {
-                System.err.printf("erro na linha %d: função '%s' exige %d argumento(s)%n", ctx.start.getLine(), nome, esperados.size());
-                typeErrorCount++;
+        if (ctx.exprList() != null) {
+            for (var e : ctx.exprList().expr()) {
+                visit(e);
+                reais.add(getTipo(e));
             }
-        } else {
-            visit(ctx.expr());
-            Tipo real = getTipo(ctx.expr());
+        }
 
-            if (esperados.size() != 1) {
-                System.err.printf("erro na linha %d: número de argumentos inválido na função '%s'%n", ctx.start.getLine(), nome);
-                typeErrorCount++;
-            } else {
-                Tipo esperado = esperados.get(0);
-                if (esperado != real && !(esperado == Tipo.REAL && real == Tipo.INT)) {
-                    System.err.printf("erro na linha %d: tipo do argumento inválido na função '%s'%n", ctx.start.getLine(), nome);
+        /*  nº de argumentos  */
+        if (esperados.size() != reais.size()) {
+            System.err.printf("erro na linha %d: número de argumentos inválido para '%s'%n",
+                    ctx.start.getLine(), nome);
+            typeErrorCount++;
+        } else {
+            /*  verificação tipo-a-tipo  */
+            for (int i = 0; i < esperados.size(); i++) {
+                Tipo exp = esperados.get(i);
+                Tipo rel = reais.get(i);
+                boolean ok = (exp == rel) || (exp == Tipo.REAL && rel == Tipo.INT);
+                if (!ok) {
+                    System.err.printf("erro na linha %d: argumento %d tem tipo inválido para '%s'%n",
+                            ctx.start.getLine(), i + 1, nome);
                     typeErrorCount++;
                 }
             }
         }
 
+        /*  tipo da expressão é o tipo de retorno da função  */
+        types.put(ctx, func.getTipoRetorno());
         return null;
     }
-
-
 
 
     @Override
@@ -242,47 +274,43 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             visit(ctx.expr());
             Tipo tipoExpr = getTipo(ctx.expr());
             if (tipoRetornoAtual != tipoExpr && !(tipoRetornoAtual == Tipo.REAL && tipoExpr == Tipo.INT)) {
-                System.err.printf("erro na linha %d: tipo de retorno incompatível, esperado %s mas encontrado %s%n",
-                        ctx.start.getLine(),
-                        getTipoTexto(tipoRetornoAtual),
-                        getTipoTexto(tipoExpr));
+                System.err.printf("erro na linha %d: tipo de retorno incompatível, esperado %s mas encontrado %s%n", ctx.start.getLine(), getTipoTexto(tipoRetornoAtual), getTipoTexto(tipoExpr));
                 typeErrorCount++;
             }
         } else {
             if (tipoRetornoAtual != Tipo.VOID) {
-                System.err.printf("erro na linha %d: esperado valor de retorno do tipo %s%n",
-                        ctx.start.getLine(),
-                        getTipoTexto(tipoRetornoAtual));
+                System.err.printf("erro na linha %d: esperado valor de retorno do tipo %s%n", ctx.start.getLine(), getTipoTexto(tipoRetornoAtual));
                 typeErrorCount++;
             }
         }
         return null;
     }
 
-
-
-    @Override
-    public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
+    @Override public Void visitAfetacao(TugaParser.AfetacaoContext ctx){
         visit(ctx.expr());
-        String nomeVar = ctx.ID().getText();
-        ValorSimbolo entrada =(ValorSimbolo) tabelaSimbolos.getSimbolo(nomeVar);
+
+        String nome = ctx.ID().getText();
+        VarSimbolo var = tabelaSimbolos.getVar(nome);      // <--
+
+        if (var == null){
+            System.err.printf("erro na linha %d: variavel '%s' nao foi declarada%n",
+                    ctx.start.getLine(),nome);
+            typeErrorCount++;
+            return null;
+        }
 
         Tipo tipoExpr = getTipo(ctx.expr());
+        Tipo tipoVar  = var.getTipo();
 
-        if (entrada == null) {
-            System.out.printf("erro na linha %d: variavel '%s' nao foi declarada%n", ctx.start.getLine(), nomeVar);
-            typeErrorCount++;
-
-        }
-
-        Tipo tipoEntrada = entrada.getTipo();
-        if (tipoEntrada != tipoExpr && !(tipoEntrada == Tipo.REAL && tipoExpr == Tipo.INT)) {
-            System.out.printf("erro na linha %d: operador '<-' eh invalido entre %s e %s%n", ctx.start.getLine(), getTipoTexto(tipoEntrada), getTipoTexto(tipoExpr));
+        if (tipoVar!=tipoExpr && !(tipoVar==Tipo.REAL && tipoExpr==Tipo.INT)){
+            System.err.printf("erro na linha %d: operador '<-' incompatível entre %s e %s%n",
+                    ctx.start.getLine(),tipoVar,tipoExpr);
             typeErrorCount++;
         }
-
         return null;
     }
+//---  FIM ALTERAÇÃO 3  -------------------------------
+
 
     @Override
     public Void visitBloco(TugaParser.BlocoContext ctx) {
@@ -328,19 +356,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    @Override
-    public Void visitVar(TugaParser.VarContext ctx) {
-        String nome = ctx.ID().getText();
-        ValorSimbolo entrada = (ValorSimbolo) tabelaSimbolos.getSimbolo(nome);
-        if (entrada == null) {
-            System.err.printf("erro na linha %d: variavel '%s' nao foi declarada%n", ctx.start.getLine(), nome);
-            typeErrorCount++;
-            types.put(ctx, Tipo.ERRO);
-        } else {
-            types.put(ctx, entrada.getTipo());
-        }
-        return null;
-    }
+
 
     @Override
     public Void visitOr(TugaParser.OrContext ctx) {
@@ -459,5 +475,8 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             case ERRO -> "erro";
         };
     }
-    public int getAddr(){return addr;}
+
+    public int getAddr() {
+        return addr;
+    }
 }
