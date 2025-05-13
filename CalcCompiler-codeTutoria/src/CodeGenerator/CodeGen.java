@@ -51,7 +51,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         // Fix the jump to 'principal'
         Integer labelPrincipal = labelsFuncoes.get("principal");
         if (labelPrincipal == null) {
-            System.err.println("Error: principal() function not found.");
+            System.out.println("erro na linha "+ctx.start.getLine()+": falta funcao principal()");
         } else {
             ((Instruction1Arg) code.get(jumpToMain)).setArg(labelPrincipal);
         }
@@ -64,9 +64,8 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         String nome = ctx.ID().getText();
         currentFunction = nome;
         localVars.clear();
-        nextLocalVarIndex = 1;
-
-        // Count parameters for this function
+        nextLocalVarIndex = functionParamCount;
+        //conta primeiro os parametros existentes
         functionParamCount = (ctx.formalParameters() != null) ?
                 ctx.formalParameters().formalParameter().size() : 0;
 
@@ -83,16 +82,9 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         // Visit function body
         visit(ctx.bloco());
 
-        // Ensure function has a return statement if it's not a void function
-        boolean hasExplicitReturn = hasReturnStatement(ctx.bloco());
-        if (!hasExplicitReturn) {
-            // For void functions, add default return
-            if (ctx.TYPE() == null) {
-                emit(OpCode.ret, functionParamCount);
-            }
-        }
-
-        currentFunction = "";
+        // default return for void
+        if(ctx.TYPE()==null) emit(OpCode.ret,functionParamCount);
+        currentFunction="";
         return null;
     }
 
@@ -128,8 +120,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         } else {
             // Local variables - map names to stack indices
             for (var id : ctx.ID()) {
-                String varName = id.getText();
-                localVars.put(varName, nextLocalVarIndex++);
+                localVars.put(id.getText(), nextLocalVarIndex++);
             }
         }
         return null;
@@ -176,7 +167,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             // Global variable
             emit(OpCode.gload, simbolo.getIndex());
         }
-
         return null;
     }
 
@@ -184,55 +174,43 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
         String nome = ctx.ID().getText();
         FuncaoSimbolo func = tabelaSimbolos.getFuncao(nome);
-        if (func == null) return null;
+        if (func == null) {
+            System.out.println("Error: Função não definida: " + nome + " na linha " + ctx.start.getLine());
+            return null;
+        }
 
-        // Evaluate and push all arguments in order
+        // Avalia e empilha argumentos
         if (ctx.exprList() != null) {
             for (var expr : ctx.exprList().expr()) {
                 visit(expr);
             }
         }
 
-        // Call the function
+        // Obter o label da função e emitir a instrução call
         Integer label = labelsFuncoes.get(nome);
-        if (label != null) {
-            emit(OpCode.call, label);
+        if (label == null) {
+            System.err.println("Error: Label da função não encontrada para " + nome);
         } else {
-            System.err.println("Error: Function label not found for " + nome);
+            emit(OpCode.call, label);
         }
-
         return null;
     }
 
+
     @Override
     public Void visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) {
-        String nome = ctx.ID().getText();
-        FuncaoSimbolo func = tabelaSimbolos.getFuncao(nome);
-        if (func == null) return null;
-
-        // Push single argument if present
-        if (ctx.expr() != null) {
-            visit(ctx.expr());
-        }
-
-        // Call the function
-        Integer label = labelsFuncoes.get(nome);
-        if (label != null) {
-            emit(OpCode.call, label);
-        } else {
-            System.err.println("Error: Function label not found for " + nome);
-        }
-
+        visit(ctx.expr());
+        emit(OpCode.call,labelsFuncoes.get(ctx.ID().getText()));
         return null;
     }
 
     @Override
     public Void visitRetorna(TugaParser.RetornaContext ctx) {
-        if (ctx.expr() != null) {
+        if(ctx.expr()!=null) {
             visit(ctx.expr());
-            emit(OpCode.retval, functionParamCount);
+            emit(OpCode.retval,functionParamCount);
         } else {
-            emit(OpCode.ret, functionParamCount);
+            emit(OpCode.ret,functionParamCount);
         }
         return null;
     }

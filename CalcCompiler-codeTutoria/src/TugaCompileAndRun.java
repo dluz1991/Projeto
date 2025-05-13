@@ -86,12 +86,8 @@ public class TugaCompileAndRun {
             //definiçao dos scopes com os nomes das funçoes
             DefPhase defPhase = new DefPhase(scope);
             scope.print();
-            //debugging dos scopes
-
-            //defPhase.printScopes();
-
             walker.walk(defPhase, tree);
-
+            //scope.print();
             TypeChecker checker = new TypeChecker(tabelaSimbolos,scope);
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
