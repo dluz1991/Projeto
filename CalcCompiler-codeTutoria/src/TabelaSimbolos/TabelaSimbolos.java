@@ -18,7 +18,7 @@ public class TabelaSimbolos {
     public void putVariavel(String nome, Tipo tipo, int addr, int scope) {
         if (vars.containsKey(nome))
             throw new RuntimeException("Variável já existe: "+nome);
-        vars.put(nome, new VarSimbolo(tipo, addr, scope));
+        vars.put(nome, new VarSimbolo(nome, tipo, addr, scope));
     }
 
     public VarSimbolo getVar(String nome){
@@ -28,7 +28,7 @@ public class TabelaSimbolos {
     }
 
     /* --------- funções --------- */
-    public void putFuncao(String nome, Tipo ret, List<Tipo> args, int scope){
+    public void putFuncao(String nome, Tipo ret, List<VarSimbolo> args, int scope){
         if (funs.containsKey(nome))
             throw new RuntimeException("Função já existe: "+nome);
         funs.put(nome,new FuncaoSimbolo(nome,ret,args,scope));

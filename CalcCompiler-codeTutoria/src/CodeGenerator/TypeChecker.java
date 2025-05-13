@@ -56,21 +56,24 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             }
 
             /*-- lista de tipos dos argumentos --*/
-            List<Tipo> tiposArgs = new ArrayList<>();
+            List<VarSimbolo> tiposArgs = new ArrayList<>();
             if (funcDecl.formalParameters() != null) {
                 for (var p : funcDecl.formalParameters().formalParameter()) {
-                    Tipo t = switch (p.TYPE().getText()) {
-                        case "inteiro"   -> Tipo.INT;
-                        case "real"      -> Tipo.REAL;
-                        case "string"    -> Tipo.STRING;
-                        case "booleano"  -> Tipo.BOOL;
-                        default          -> Tipo.ERRO;
-                    };
+                    VarSimbolo t = new VarSimbolo(
+                            p.ID().getText(),
+                            switch (p.TYPE().getText()) {
+                                case "inteiro"   -> Tipo.INT;
+                                case "real"      -> Tipo.REAL;
+                                case "string"    -> Tipo.STRING;
+                                case "booleano"  -> Tipo.BOOL;
+                                default          -> Tipo.ERRO;
+                            }
+                    );
                     tiposArgs.add(t);
                 }
             }
 
-            int escopoFunc = scope.get(nome);
+            int escopoFunc = scope.getCurrentScope();
 
             if (tabelaSimbolos.existeFunc(nome)) {
                 System.err.printf("erro: funcao '%s' duplicada%n", nome);
@@ -116,7 +119,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         /*  cada identificador da lista  */
         for (var idTok : ctx.ID()) {
             String nome      = idTok.getText();
-            int    escopoVar = scope.get(nome);
+            int    escopoVar = scope.getCurrentScope();
 
             /*  já existe símbolo com o mesmo nome neste escopo?  */
             boolean existe =
@@ -195,7 +198,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
                 }
 
                 nomes.add(id);
-                escopoLocal.putVariavel(id, tipo, localAddr++, scope.get(id));
+                escopoLocal.putVariavel(id, tipo, localAddr++, scope.getCurrentScope());
             }
         }
 
@@ -233,7 +236,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         }
 
         /*  tipos esperados vs. reais dos argumentos  */
-        List<Tipo> esperados = func.getTiposArgumentos();
+        List<Tipo> esperados= new ArrayList<>();
         List<Tipo> reais     = new ArrayList<>();
 
         if (ctx.exprList() != null) {
@@ -473,6 +476,16 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             case BOOL -> "booleano";
             case VOID -> "vazio";
             case ERRO -> "erro";
+        };
+    }
+    public static Tipo getTipo(String tipo){
+        return  switch (tipo) {
+            case "inteiro" -> Tipo.INT;
+            case "real" -> Tipo.REAL;
+            case "string" -> Tipo.STRING;
+            case "booleano" -> Tipo.BOOL;
+            case "vazio" -> Tipo.VOID;
+            default -> Tipo.ERRO;
         };
     }
 

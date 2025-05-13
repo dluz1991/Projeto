@@ -1,56 +1,59 @@
 package TabelaSimbolos;
 
+import CodeGenerator.*;
+
 import java.util.HashMap;
 
 public class Enquadramento {
-    private final HashMap<String, Integer> scope;
-    private final HashMap<Integer, Integer> parentMap = new HashMap<>();
-    private int currentScope = 0;
+    private HashMap<String, Tipo> scope;
+    private Enquadramento parent;
+    private int currentScope;
 
-    public Enquadramento() {
+    public Enquadramento(Enquadramento parent, int scopeNumber) {
+        this.parent = parent;
+        this.currentScope = scopeNumber;
         this.scope = new HashMap<>();
     }
 
-    public void put(String nome, Integer valor) {
-        scope.put(nome, valor);
+    public void put(String nome, Tipo tipo) {
+        scope.put(nome, tipo);
     }
 
-    public Integer get(String nome) {
-        return scope.get(nome);
+    public Tipo get(String nome) {
+        Tipo tipo = scope.get(nome);
+        if (tipo == null && parent != null) {
+            return parent.get(nome);
+        }
+        return tipo;
     }
 
     public boolean contains(String nome) {
-        return scope.containsKey(nome);
+        return scope.containsKey(nome) || (parent != null && parent.contains(nome));
+    }
+
+    public int getCurrentScope() { 
+        return currentScope; 
     }
 
     public void remove(String nome) {
         scope.remove(nome);
     }
 
-    public HashMap<String, Integer> getScope() {
+    public HashMap<String, Tipo> getScope() {
         return scope;
     }
 
+    public Enquadramento getParent() {
+        return parent;
+    }
+
     public void print() {
+        System.out.println("Scope " + currentScope + ":");
         for (String key : scope.keySet()) {
-            System.out.println("Nome: " + key + ", Enquadramento: " + scope.get(key));
+            System.out.println("  " + key + " : " + scope.get(key));
         }
-    }
-
-    // Adicionado para herança entre escopos
-    public void setPai(int filho, int pai) {
-        parentMap.put(filho, pai);
-    }
-
-    public Integer getPai(int scopeId) {
-        return parentMap.get(scopeId);
-    }
-
-    public void setCurrentScope(int scope) {
-        currentScope = scope;
-    }
-
-    public int getCurrentScope() {
-        return currentScope;
+        if (parent != null) {
+            parent.print();
+        }
     }
 }

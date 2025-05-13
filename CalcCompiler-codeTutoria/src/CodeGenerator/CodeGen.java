@@ -157,7 +157,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     @Override
     public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
         String nome = ctx.ID().getText();
-        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getSimbolo(nome);
+        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getVar(nome);
         if (simbolo == null) return null;
         Tipo tipoAlvo = simbolo.getTipo();
         visitAndConvert(ctx.expr(), tipoAlvo);
@@ -232,7 +232,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitVar(TugaParser.VarContext ctx) {
-        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getSimbolo(ctx.ID().getText());
+        VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getVar(ctx.ID().getText());
 
         if (simbolo != null) emit(OpCode.gload, simbolo.getIndex());
         return null;

@@ -71,7 +71,7 @@ public class TugaCompileAndRun {
                 return;
             }
             TabelaSimbolos tabelaSimbolos= new TabelaSimbolos();
-            Enquadramento scope = new Enquadramento();
+            Enquadramento scope = new Enquadramento(null,0);
 
             TugaParser parser = new TugaParser(tokens);
             parser.removeErrorListeners();

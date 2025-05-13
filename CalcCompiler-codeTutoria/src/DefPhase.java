@@ -1,91 +1,130 @@
+import CodeGenerator.Tipo;
+import CodeGenerator.TypeChecker;
 import Tuga.*;
 import TabelaSimbolos.*;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
-
+import java.util.*;
 
 public class DefPhase extends TugaBaseListener {
-    private final Enquadramento enquandramento;
-    private int scopeLevel = 0;
-    private int currentScope = 0;
-    private final Stack<Integer> scopeStack = new Stack<>();
-    private final Map<Integer, Integer> parentMap = new HashMap<>();
+    ParseTreeProperty<Enquadramento> scopes = new ParseTreeProperty<Enquadramento>();
+    Enquadramento global;
+    Enquadramento currentScope;
+    int lastScope = 0;
+    Stack<Enquadramento> scopeStack = new Stack<>();
+
+    FuncaoSimbolo funcaoAtual = null;
+    boolean print = true;
 
     public DefPhase(Enquadramento scope) {
-        this.enquandramento = scope;
-        // Escopo global E0
-        scopeStack.push(0);
+        if (scope != null) {
+            this.global = scope;
+            this.currentScope = scope;
+            this.lastScope = scope.getCurrentScope();
+        }
     }
 
     @Override
     public void enterProg(TugaParser.ProgContext ctx) {
-        currentScope = 0;
+        if (global == null) {
+            global = new Enquadramento(null, 0);
+            currentScope = global;
+            lastScope = 0;
+        }
+        scopeStack.push(currentScope);
+        if (print) {
+            System.out.println(currentScope);
+        }
+    }
+
+    @Override
+    public void exitProg(TugaParser.ProgContext ctx) {
+        // Verifica se a função principal "main" foi declarada
+        if (!currentScope.contains("principal")) {
+            System.err.println("Erro: função principal não encontrada.");
+        }
+        if (print) {
+            System.out.println(currentScope);
+        }
+        scopeStack.pop();
     }
 
     @Override
     public void enterFunctionDecl(TugaParser.FunctionDeclContext ctx) {
         String nome = ctx.ID().getText();
-        scopeLevel++;
-        int novoScope = scopeLevel;
-        parentMap.put(novoScope, currentScope);
-        currentScope = novoScope;
-        scopeStack.push(currentScope);
-        enquandramento.put(nome, currentScope);
+        String tipoString = ctx.TYPE() != null ? ctx.TYPE().getText() : "void";  // Verifica se o tipo é nulo
+        Tipo tipo = TypeChecker.getTipo(tipoString);
+
+        List<VarSimbolo> args = new ArrayList<>();
+        if (ctx.formalParameters() != null) {  // Verifica se formalParameters() é não nulo
+            for (TugaParser.FormalParameterContext param : ctx.formalParameters().formalParameter()) {
+                String paramNome = param.ID().getText();
+                Tipo paramTipo = TypeChecker.getTipo(param.TYPE().getText());
+                currentScope.put(paramNome, paramTipo);
+                args.add(new VarSimbolo(paramNome, paramTipo));
+            }
+        }
+
+        FuncaoSimbolo funcao = new FuncaoSimbolo(nome, tipo, args, currentScope.getCurrentScope());
+        funcaoAtual = funcao;
+
+        // Se necessário, print para debug
+        if (print) {
+            System.out.println("enterFunction " + ctx.TYPE() + " " + funcao.getNome() + "(...) >> " + currentScope);
+        }
     }
 
-    @Override
-    public void exitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
-        scopeStack.pop();
-        currentScope = scopeStack.peek();
+
+    void saveScope(ParserRuleContext ctx, Enquadramento s) {
+        scopes.put(ctx, s);
     }
 
     @Override
     public void enterBloco(TugaParser.BlocoContext ctx) {
-        scopeLevel++;
-        int novoScope = scopeLevel;
-        parentMap.put(novoScope, currentScope);
-        currentScope = novoScope;
+        currentScope = new Enquadramento(currentScope, ++lastScope);
         scopeStack.push(currentScope);
+
+        // Adiciona as variáveis da função no escopo
+        if (funcaoAtual != null) {
+            currentScope.put(funcaoAtual.getNome(), funcaoAtual.getTipoRetorno());
+            for (var arg : funcaoAtual.getTiposArgumentos()) {
+                currentScope.put(arg.getName(), arg.getTipo());
+            }
+        }
+
+        if (print) {
+            System.out.println("Entrando no escopo: " + currentScope.getCurrentScope());
+        }
     }
 
     @Override
     public void exitBloco(TugaParser.BlocoContext ctx) {
         scopeStack.pop();
         currentScope = scopeStack.peek();
-    }
-
-    @Override
-    public void enterFormalParameter(TugaParser.FormalParameterContext ctx) {
-        String nome = ctx.ID().getText();
-        if (enquandramento.contains(nome) && enquandramento.get(nome) == currentScope) {
-            System.out.println("Erro: parâmetro '" + nome + "' já declarado no mesmo scope");
-        } else {
-            enquandramento.put(nome, currentScope);
+        if (print) {
+            System.out.println("Saindo do escopo: " + currentScope.getCurrentScope());
         }
     }
 
     @Override
     public void enterVarDeclaration(TugaParser.VarDeclarationContext ctx) {
+        String tipoString = ctx.TYPE().getText();
+        Tipo tipo = TypeChecker.getTipo(tipoString);
+
         for (var id : ctx.ID()) {
             String nome = id.getText();
-            if (enquandramento.contains(nome) && enquandramento.get(nome) == currentScope) {
-                System.out.println("Erro: variável '" + nome + "' já declarada no mesmo scope");
+            // Verifica se já existe uma variável com o mesmo nome no escopo
+            if (currentScope.contains(nome)) {
+                // Caso seja necessário, tratar como erro (sem implementação extra de erro)
             } else {
-                enquandramento.put(nome, currentScope);
+                currentScope.put(nome, tipo);
             }
         }
     }
 
     public void printScopes() {
         System.out.println("--- Tabela de Identificadores ---");
-        enquandramento.print();
-
-        System.out.println("--- Hierarquia de Scopes ---");
-        for (var entry : parentMap.entrySet()) {
-            System.out.printf("Scope %d -> pai: %s%n", entry.getKey(),
-                    entry.getValue() == null ? "nenhum" : entry.getValue());
-        }
+        currentScope.print();
     }
 }

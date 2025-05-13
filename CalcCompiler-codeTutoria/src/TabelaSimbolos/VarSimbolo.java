@@ -6,11 +6,20 @@ public class VarSimbolo {
     private final Tipo tipo;
     private final int index;
     private final int scope;
+    private final String name;
 
-    public VarSimbolo(Tipo tipo, int endereco, int scope) {
+    public VarSimbolo(String nome, Tipo tipo, int endereco, int scope) {
         this.tipo = tipo;
         this.index = endereco;
         this.scope = scope;
+        this.name = nome;
+    }
+
+    public VarSimbolo(String nome, Tipo tipo) {
+        this.tipo = tipo;
+        this.index = -1;
+        this.scope = -1;
+        this.name = nome;
     }
 
     public Tipo getTipo() {
@@ -23,5 +32,9 @@ public class VarSimbolo {
 
     public int getScope() {
         return scope;
+    }
+
+    public String getName() {
+        return name;
     }
 }
