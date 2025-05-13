@@ -15,7 +15,8 @@ public class DefPhase extends TugaBaseListener {
     Stack<Enquadramento> scopeStack = new Stack<>();
 
     FuncaoSimbolo funcaoAtual = null;
-    boolean print = true;
+
+    boolean print = false; // Flag para imprimir informações de depuração
 
     public DefPhase(Enquadramento scope) {
         if (scope != null) {
@@ -33,20 +34,11 @@ public class DefPhase extends TugaBaseListener {
             lastScope = 0;
         }
         scopeStack.push(currentScope);
-        if (print) {
-            System.out.println(currentScope);
-        }
     }
 
     @Override
     public void exitProg(TugaParser.ProgContext ctx) {
         // Verifica se a função principal "main" foi declarada
-        if (!currentScope.contains("principal")) {
-            System.err.println("Erro: função principal não encontrada.");
-        }
-        if (print) {
-            System.out.println(currentScope);
-        }
         scopeStack.pop();
     }
 
@@ -63,6 +55,9 @@ public class DefPhase extends TugaBaseListener {
                 Tipo paramTipo = TypeChecker.getTipo(param.TYPE().getText());
                 currentScope.put(paramNome, paramTipo);
                 args.add(new VarSimbolo(paramNome, paramTipo));
+                if (print) {
+                    System.out.println("Parâmetro: " + paramTipo + " " + paramNome + " no escopo " + currentScope.getCurrentScope());
+                }
             }
         }
 
@@ -71,10 +66,11 @@ public class DefPhase extends TugaBaseListener {
 
         // Se necessário, print para debug
         if (print) {
-            System.out.println("enterFunction " + ctx.TYPE() + " " + funcao.getNome() + "(...) >> " + currentScope);
+            String type=ctx.TYPE() != null ? ctx.TYPE().getText() : "void";
+            System.out.println("enterFunction " + type + " " + funcao.getNome() + "(...) >> " + currentScope);
+            currentScope.print();
         }
     }
-
 
     void saveScope(ParserRuleContext ctx, Enquadramento s) {
         scopes.put(ctx, s);
@@ -83,6 +79,7 @@ public class DefPhase extends TugaBaseListener {
     @Override
     public void enterBloco(TugaParser.BlocoContext ctx) {
         currentScope = new Enquadramento(currentScope, ++lastScope);
+        saveScope(ctx, currentScope);
         scopeStack.push(currentScope);
 
         // Adiciona as variáveis da função no escopo
@@ -121,10 +118,12 @@ public class DefPhase extends TugaBaseListener {
                 currentScope.put(nome, tipo);
             }
         }
+        if (print) {
+            System.out.println("Declaração de variável: " + tipo + " " + ctx.getText() + " no escopo " + currentScope.getCurrentScope());
+        }
+    }
+    public ParseTreeProperty<Enquadramento> getScopes() {
+        return scopes;
     }
 
-    public void printScopes() {
-        System.out.println("--- Tabela de Identificadores ---");
-        currentScope.print();
-    }
 }

@@ -85,14 +85,14 @@ public class TugaCompileAndRun {
             }
             //definiçao dos scopes com os nomes das funçoes
             DefPhase defPhase = new DefPhase(scope);
-            scope.print();
+            //scope.print();
             //debugging dos scopes
 
             //defPhase.printScopes();
 
             walker.walk(defPhase, tree);
 
-            TypeChecker checker = new TypeChecker(tabelaSimbolos,scope);
+            TypeChecker checker = new TypeChecker(tabelaSimbolos,defPhase.getScopes());
             checker.visit(tree);
             if (checker.getTypeErrorCount() > 0) {
          //       System.out.println("Input has type checking errors");
