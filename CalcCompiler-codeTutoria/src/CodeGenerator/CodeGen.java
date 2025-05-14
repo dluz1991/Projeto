@@ -37,28 +37,26 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        for (var decl : ctx.varDeclaration()) {
-            visit(decl);
-        }
-        // Visitar primeiro a funçao principal
-        for (var func : ctx.functionDecl()) {
-            if (func.ID().getText().equals("principal")) {
-                visit(func);
-            }
-        }
-        // Visitar as outras funcoes
-        for (var func : ctx.functionDecl()) {
-            visit(func);
-        }
-
-        // Corrigir o jump para principal
-        Integer labelPrincipal = labelsFuncoes.get("principal");
-        if (labelPrincipal == null) {
-            System.out.println("erro na linha " + (code.size() - 1) + ": falta funcao principal()"); //so da erro na ultima linha de codigo
-        }
+        /* 1) gerar “bootstrap” */
+        emit(OpCode.call, -1);              // placeholder
+        int callIdx = code.size() - 1;
         emit(OpCode.halt);
+        /* 2) variáveis globais (se existirem) */
+        for (var decl : ctx.varDeclaration()) visit(decl);
+
+        /* 3) todas as funções (ordem indiferente) */
+        for (var func : ctx.functionDecl()) visit(func);
+
+        /* 4) fim do programa */
+
+
+        /* 5) patch do destino do call */
+        Integer lbl = labelsFuncoes.get("principal");
+        if (lbl == null)  System.out.println("erro na linha "+(code.size()-1)+": falta a função principal()");
+        else ((Instruction1Arg) code.get(callIdx)).setArg(lbl);
         return null;
     }
+
 
 
     @Override
@@ -68,6 +66,10 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         insideFuntion = true;
 
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(nome);
+        int numArgs = funcao.getArgumentos().size();
+        if (numArgs > 0) {
+            emit(OpCode.lload, -1*numArgs); // Aloca espaço para os argumentos
+        }
         // Gerar código para a função
         int label = code.size();
         labelsFuncoes.put(nome, label);  // Armazenar o label para a função
@@ -77,7 +79,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
         // Criar o bloco de variáveis locais dentro da função
         int numLocais = funcao.getArgumentos().size(); // Calcula o número de variáveis locais
-        emit(OpCode.lalloc, numLocais);
+        if (numLocais>0)emit(OpCode.lalloc, numLocais);
 
         // Visitar o bloco da função
         visit(ctx.bloco());
