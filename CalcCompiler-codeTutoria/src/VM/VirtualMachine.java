@@ -449,7 +449,7 @@ public class VirtualMachine {
             // Stack e registos, alinhados com "Global:"
             String indent = " ".repeat(alignWidth);
             System.out.println(indent + "Stack:" + stack);
-            System.out.println(indent + "IP=" + IP + "  ,  FP="+IP+"\n");
+            System.out.println(indent + "IP= " + IP + "  FP= "+IP+"\n");
         }
 
 

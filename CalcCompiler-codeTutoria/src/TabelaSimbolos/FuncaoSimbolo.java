@@ -24,7 +24,7 @@ public class FuncaoSimbolo {
         return tipoRetorno;
     }
 
-    public List<VarSimbolo> getTiposArgumentos() {
+    public List<VarSimbolo> getArgumentos() {
         return argumentos;
     }
 

@@ -85,7 +85,7 @@ public class DefPhase extends TugaBaseListener {
         // Adiciona as variáveis da função no escopo
         if (funcaoAtual != null) {
             currentScope.put(funcaoAtual.getNome(), funcaoAtual.getTipoRetorno());
-            for (var arg : funcaoAtual.getTiposArgumentos()) {
+            for (var arg : funcaoAtual.getArgumentos()) {
                 currentScope.put(arg.getName(), arg.getTipo());
             }
         }

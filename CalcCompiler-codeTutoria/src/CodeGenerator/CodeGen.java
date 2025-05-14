@@ -19,6 +19,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     private int addr;
     private final Map<String, Integer> labelsFuncoes = new HashMap<>();
     private boolean insideFuntion = false;
+    private String function = null;
 
 
     public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
@@ -36,23 +37,25 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        // Gerar jump inicial para 'principal' (vamos corrigir mais à frente)
-        int jumpToMain = code.size();
-        emit(OpCode.jump, 0); // Placeholder, será ajustado depois
-
-        // Visitar todas as funções (isto define os labels!)
+        for (var decl : ctx.varDeclaration()) {
+            visit(decl);
+        }
+        // Visitar primeiro a funçao principal
         for (var func : ctx.functionDecl()) {
-            visit(func); // os labelsFuncoes são preenchidos dentro de visitFunctionDecl
+            if (func.ID().getText().equals("principal")) {
+                visit(func);
+            }
+        }
+        // Visitar as outras funcoes
+        for (var func : ctx.functionDecl()) {
+            visit(func);
         }
 
         // Corrigir o jump para principal
         Integer labelPrincipal = labelsFuncoes.get("principal");
         if (labelPrincipal == null) {
-            System.err.println("Erro: função principal() não encontrada.");
-        } else {
-            ((Instruction1Arg) code.get(jumpToMain)).setArg(labelPrincipal);
+            System.out.println("erro na linha " + (code.size() - 1) + ": falta funcao principal()"); //so da erro na ultima linha de codigo
         }
-
         emit(OpCode.halt);
         return null;
     }
@@ -61,67 +64,79 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     @Override
     public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
         String nome = ctx.ID().getText();
+        this.function = nome;
+        insideFuntion = true;
 
-        // Guardar label da função (posição atual do código)
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(nome);
+        // Gerar código para a função
         int label = code.size();
-        labelsFuncoes.put(nome, label);
+        labelsFuncoes.put(nome, label);  // Armazenar o label para a função
+        if (ctx.TYPE() != null) {  // Função com tipo de retorno
+            visit(ctx.formalParameters());
+        }
 
-        // Alocar espaço para variáveis locais (inclui parâmetros)
-        int numLocais = typeChecker.getAddr(); // foi definido ao visitar a função no TypeChecker
+        // Criar o bloco de variáveis locais dentro da função
+        int numLocais = funcao.getArgumentos().size(); // Calcula o número de variáveis locais
         emit(OpCode.lalloc, numLocais);
 
-        // Corpo da função
+        // Visitar o bloco da função
         visit(ctx.bloco());
 
-        // Se for void e não houver 'retorna', ainda assim termina com ret
-        emit(OpCode.ret, 0);
-
-        return null;
-    }
-
-    @Override
-    public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
-        String nome = ctx.ID().getText();
-
-        // Avaliar argumentos (da esquerda para a direita)
-        if (ctx.exprList() != null) {
-            for (var expr : ctx.exprList().expr()) {
-                visit(expr);
-            }
+        // Se a função for do tipo void, geramos um retorno sem valor
+        if (funcao.getTipoRetorno() == Tipo.VOID) {
+            emit(OpCode.ret, 0);
+        } else {
+            emit(OpCode.retval, 1);  // Função com valor de retorno
         }
-
-        // Emitir call
-        int label = labelsFuncoes.get(nome);
-        emit(OpCode.call, label);
-
+        insideFuntion = false;
+        this.function = null;
         return null;
     }
+
     @Override
     public Void visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) {
-        String nome = ctx.ID().getText();
+        String nome = ctx.ID().getText();  // Obtém o nome da função
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(nome);  // Obtém a função da tabela de símbolos
 
-        // Avaliar argumento se existir
-        if (ctx.expr() != null) {
-            visit(ctx.expr());
+        if (funcao != null) {
+            // Se houver expressões (argumentos), avalie-as
+            if (ctx.expr() != null) {
+                // Aqui, verificamos diretamente a expressão
+                visit(ctx.expr());  // Visita a expressão única (sem precisar de exprList())
+            }
+
+            // Chama a função usando o índice do label armazenado para a função
+            int label = labelsFuncoes.get(nome);  // Obtém o label da função da lista de labels
+            emit(OpCode.call, label);  // Gera o código para a chamada da função
+
+        } else {
+            System.out.printf("erro na linha %d: função '%s' não declarada%n", ctx.start.getLine(), nome);
         }
 
-        int label = labelsFuncoes.get(nome);
-        emit(OpCode.call, label);
-
-        // Função usada como instrução → descartamos o valor de retorno
-        emit(OpCode.pop);
-
-        return null;
+        return null;  // Retorna null, pois o método é void
     }
+
 
     @Override
     public Void visitRetorna(TugaParser.RetornaContext ctx) {
+        // Obter a função pela referência do ID (nome da função)
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(this.function);
+
+        // Contar o número de variáveis locais da função
+        int numLocais = funcao.getArgumentos().size();  // Aqui você precisa ter uma forma de obter isso
+
         if (ctx.expr() != null) {
+            // Visita a expressão, que já tem verificação de tipo feita antes
             visit(ctx.expr());
-            emit(OpCode.retval, 1); // retorna 1 valor
+
+            // Emitir a instrução retval, com o número correto de pops para as variáveis locais
+            emit(OpCode.retval, numLocais); // Passa o número de variáveis locais para o número de pops
         } else {
-            emit(OpCode.ret, 0); // retorna sem valor
+            // Caso a função não tenha expressão (ou seja, é uma função void)
+            // Emitir a instrução ret, sem valor de retorno
+            emit(OpCode.ret, numLocais); // Para void, apenas retornar e fazer o número correto de pops
         }
+
         return null;
     }
 
@@ -144,9 +159,14 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             String nome = id.getText();
             count++;
         }
-        //conta o numero de variaveis por linha e emite codigo
         if (count > 0) {
-            emit(OpCode.galloc, count);
+            if (insideFuntion) {
+                emit(OpCode.lalloc, count);
+
+            } else {
+                //conta o numero de variaveis por linha e emite codigo
+                emit(OpCode.galloc, count);
+            }
         }
 
 
@@ -160,20 +180,58 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         VarSimbolo simbolo = (VarSimbolo) tabelaSimbolos.getVar(nome);
         if (simbolo == null) return null;
         Tipo tipoAlvo = simbolo.getTipo();
-        visitAndConvert(ctx.expr(), tipoAlvo);
-        emit(OpCode.gstore, simbolo.getIndex());
-
+        visit(ctx);
+        int scope = typeChecker.scopes.get(ctx).getCurrentScope();
+        if (scope == 0) {
+            emit(OpCode.gstore, simbolo.getIndex());
+        } else if (scope > 0) {
+            emit(OpCode.lstore, simbolo.getIndex());
+        }
 
         return null;
     }
 
     @Override
     public Void visitBloco(TugaParser.BlocoContext ctx) {
-        for (TugaParser.StatContext s : ctx.stat()) {
-            visit(s);
+
+        /*-------------------------------------------------
+         * 1. Abrir um novo scope na função actual
+         *------------------------------------------------*/
+        String nomeFunc = this.function;           // nome da função em que estamos
+        if (nomeFunc == null) {                    // bloco global → sem variáveis locais
+            for (var s : ctx.stat())          visit(s);
+            return null;
         }
+
+        FuncaoSimbolo func = tabelaSimbolos.getFuncao(nomeFunc);
+        // novo frame de variáveis locais
+
+        /*-------------------------------------------------
+         * 2. Declarar variáveis locais
+         *------------------------------------------------*/
+        int nLocais = 0;                           // nº de variáveis neste bloco
+
+        for (TugaParser.VarDeclarationContext v : ctx.varDeclaration()) {
+            visit(v);                              // regista variáveis
+            nLocais ++;              // conta TODAS as variáveis declaradas
+        }
+        /*-------------------------------------------------
+         * 3. Visitar as instruções
+         *------------------------------------------------*/
+        for (TugaParser.StatContext s : ctx.stat()) {
+            visit(s);                              // 'visitRetornaStat' trata do return
+        }
+
+        /*-------------------------------------------------
+         * 4. Libertar variáveis locais deste bloco
+         *------------------------------------------------*/
+        if (nLocais > 0) emit(OpCode.pop, nLocais); // desaloca espaço
+
         return null;
     }
+
+
+
 
     @Override
     public Void visitEquanto(TugaParser.EquantoContext ctx) {
@@ -565,6 +623,9 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      * @return null
      */
     private void emitConversion(Tipo de, Tipo para) {
+        if (de == Tipo.VOID) {
+            return;
+        } // não faz nada mas garante que void nao da erro
         if (de == para) return;
         switch (de) {
             case INT -> {

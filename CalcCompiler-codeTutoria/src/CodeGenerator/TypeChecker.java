@@ -131,8 +131,12 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
                 tiposArgs.add(t);
             }
         }
-
-        int escopoFunc = scopes.get(ctx).getCurrentScope();
+        int escopoFunc;
+        if (scopes.get(ctx) != null){
+            escopoFunc= scopes.get(ctx).getCurrentScope();
+        } else {
+            escopoFunc = 0;
+        }
 
         if (tabelaSimbolos.existeFunc(nome)) {
             System.err.printf("Erro na linha %d: função '%s' já declarada no escopo atual.%n", ctx.start.getLine(), nome);
@@ -163,13 +167,13 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         // Verificar se os tipos dos parâmetros correspondem à declaração da função
         int numParametros = ctx.exprList().expr().size();
         System.out.println("Numero de parametros: " + numParametros); //debugging
-        if (numParametros != funcao.getTiposArgumentos().size()) {
+        if (numParametros != funcao.getArgumentos().size()) {
             System.out.printf("erro na linha %d: '%s' requer %d argumentos" , ctx.start.getLine(),nomeFunc, numParametros);
             typeErrorCount++;
         }
 
         for (int i = 0; i < numParametros; i++) {
-            Tipo tipoEsperado = funcao.getTiposArgumentos().get(i).getTipo();
+            Tipo tipoEsperado = funcao.getArgumentos().get(i).getTipo();
             Tipo tipoReal = getTipo(ctx.exprList().expr(i));
             String nomeArg = ctx.exprList().expr(i).getText();
 
@@ -203,10 +207,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         // Verificação para funções do tipo void
         if (tipoRetornoEsperado == Tipo.VOID) {
             // Se a função for void, não deve ter uma expressão no retorno
-            if (ctx.expr() != null) {
-                System.out.printf("Erro na linha %d: função '%s' do tipo void não pode retornar valor.%n", ctx.start.getLine(), funcaoAtual.getNome());
-                typeErrorCount++;
-            }
+            return null;
         } else {
             // Se a função não for void, deve ter uma expressão e o tipo da expressão deve ser compatível
             if (ctx.expr() != null) {
