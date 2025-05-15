@@ -53,7 +53,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
 
             visit(funcDecl);
         }
-        System.out.printf(tabelaSimbolos.toString());
+        //System.out.printf(tabelaSimbolos.toString()); //print para despiste
         // 3.º PASSO - garantir existência de principal()
         if (!tabelaSimbolos.existeFunc("principal")) {
             System.out.printf("erro na linha %d: falta funcao principal()%n", ctx.start.getLine());
@@ -116,7 +116,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
         String nome = ctx.ID().getText();
 
-        /*-- tipo de retorno --*/
+        // Tipo de retorno
         Tipo tipoRet = Tipo.VOID;
         if (ctx.TYPE() != null) {
             tipoRet = switch (ctx.TYPE().getText()) {
@@ -128,36 +128,54 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             };
         }
 
-        /*-- lista de tipos dos argumentos --*/
+        // Obter escopo atual da função
+        Enquadramento currentScope = scopes.get(ctx);
+        int escopoFunc = currentScope.getCurrentScope();
+
+        // Construir lista de argumentos com índices negativos
         List<VarSimbolo> tiposArgs = new ArrayList<>();
         if (ctx.formalParameters() != null) {
-            for (var p : ctx.formalParameters().formalParameter()) {
-                VarSimbolo t = new VarSimbolo(p.ID().getText(), switch (p.TYPE().getText()) {
-                    case "inteiro" -> Tipo.INT;
-                    case "real" -> Tipo.REAL;
-                    case "string" -> Tipo.STRING;
-                    case "booleano" -> Tipo.BOOL;
-                    default -> Tipo.ERRO;
-                });
-                tiposArgs.add(t);
+            List<TugaParser.FormalParameterContext> params = ctx.formalParameters().formalParameter();
+            for (int i = 0; i < params.size(); i++) {
+                var p = params.get(i);
+                String nomeArg = p.ID().getText();
+                Tipo tipoArg = getTipo(p.TYPE().getText());
+                int idx = -1 - i;
+                tiposArgs.add(new VarSimbolo(nomeArg, tipoArg, idx, escopoFunc));
+                currentScope.put(nomeArg, tipoArg); // registar tipo no escopo
             }
         }
-        int escopoFunc = 0;
-        Enquadramento currentScope = scopes.get(ctx);
-
-        escopoFunc = currentScope.getCurrentScope();
-
 
         if (tabelaSimbolos.existeFunc(nome)) {
             System.err.printf("Erro na linha %d: função '%s' já declarada no escopo atual.%n", ctx.start.getLine(), nome);
             typeErrorCount++;
         } else {
-            //System.out.println("Adicionando função: " + nome + " no escopo " + escopoFunc);
             tabelaSimbolos.putFuncao(nome, tipoRet, tiposArgs, escopoFunc);
         }
+
         return null;
     }
 
+
+    @Override
+    public Void visitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) {
+        String nomeFunc = ctx.chamadaFuncao().ID().getText();
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(nomeFunc);
+
+        if (funcao == null) {
+            System.out.printf("erro na linha %d: função '%s' não foi declarada%n", ctx.start.getLine(), nomeFunc);
+            typeErrorCount++;
+            return null;
+        }
+
+        if (funcao.getTipoRetorno() != Tipo.VOID) {
+            System.out.printf("erro na linha %d: chamada à função '%s' não é válida como instrução, pois retorna um valor%n",
+                    ctx.start.getLine(), nomeFunc);
+            typeErrorCount++;
+        }
+
+        return null;
+    }
 
     /*------------------------------------------------------------------
      *  visitChamadaFuncaoExpr
@@ -205,7 +223,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         Enquadramento currentScope = scopes.get(ctx);
 
         // Verifica o nome da função atual (ou busca na tabela de símbolos)
-        String nomeFuncao = ctx.expr().getText();// Ou outro método para pegar o nome da função no escopo
+        String nomeFuncao = obterNomeFuncao(ctx);// Ou outro método para pegar o nome da função no escopo
         FuncaoSimbolo funcaoAtual = tabelaSimbolos.getFuncao(nomeFuncao);
 
         if (funcaoAtual == null) {
@@ -240,6 +258,17 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         return null;
     }
 
+    private String obterNomeFuncao(ParseTree ctx) {
+        while (ctx != null && !(ctx instanceof TugaParser.FunctionDeclContext)) {
+            ctx = ctx.getParent();
+        }
+        if (ctx instanceof TugaParser.FunctionDeclContext funcCtx) {
+            return funcCtx.ID().getText();
+        }
+        return null;
+    }
+
+
 
     @Override
     public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
@@ -272,6 +301,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         for (var stat : ctx.stat()) visit(stat);
         return null;
     }
+
 
     @Override
     public Void visitEquanto(TugaParser.EquantoContext ctx) {
