@@ -1,34 +1,42 @@
 grammar Tuga;
 
-prog    : varDeclaration* functionDecl+ EOF;
+prog
+       : varDeclaration* functionDecl+ EOF;
 
-functionDecl : 'funcao' ID LPAREN formalParameters? RPAREN(':' TYPE)? bloco;
-formalParameter:ID ':'TYPE;
-formalParameters : formalParameter (',' formalParameter)*;
+functionDecl
+       : 'funcao' ID LPAREN formalParameters? RPAREN(':' TYPE)? bloco;
+formalParameter
+       :ID ':'TYPE;
+formalParameters
+       : formalParameter (',' formalParameter)*;
 
-bloco : 'inicio' varDeclaration* stat* 'fim' ;
+bloco
+       : 'inicio' varDeclaration* stat* 'fim' ;
 
-varDeclaration: ID(','ID)* ':' TYPE? SCOMMA;
+varDeclaration
+       : ID(','ID)* ':' TYPE? SCOMMA;
 
-stat   : ID '<-' expr SCOMMA                           # Afetacao
+stat
+       : ID '<-' expr SCOMMA                           # Afetacao
        | bloco                                       # BlocoStat
        | 'enquanto' LPAREN expr RPAREN stat           # Equanto
        | 'se' LPAREN expr RPAREN stat ('senao' stat)?  # Se
        | 'escreve' expr SCOMMA                         # Escreve
        | 'retorna' expr SCOMMA                          # Retorna
-       | ID LPAREN expr? RPAREN SCOMMA         # ChamadaFuncao
+       | chamadaFuncao SCOMMA                       # ChamadaFuncaoStat
        | SCOMMA                                        # Vazia
        ;
 
 
-expr   :op=(MINUS|NOT) expr                                                 # Unary
+expr
+       :op=(MINUS|NOT) expr                                                 # Unary
        | expr op=(TIMES|DIV|REMAINDER) expr                                 # MulDiv
        | expr op=(PLUS|MINUS) expr                                          # AddSub
        | expr op=(LESS|GREATER|LESSEQUAL|GREATEREQUAL|EQUAL|DIFFERENT) expr # Relational
        | expr op=AND expr                                                   # And
        | expr op=OR expr                                                    # Or
        |LPAREN expr RPAREN                                                  # Parens
-       |ID LPAREN exprList? RPAREN                                          # ChamadaFuncaoExpr
+       |chamadaFuncao                                                       # ChamadaFuncaoExpr
        |ID                                                                  # Var
        |INT                                                                 # Int
        |REAL                                                                # Real
@@ -36,8 +44,11 @@ expr   :op=(MINUS|NOT) expr                                                 # Un
        |BOOL                                                                # Bool
        ;
 
+chamadaFuncao
+       : ID LPAREN exprList? RPAREN;
 
-exprList: expr (',' expr)*;
+exprList
+       : expr (',' expr)*;
 
 TYPE    :'inteiro' | 'real' | 'string' | 'booleano' ;
 LPAREN  : '(' ;

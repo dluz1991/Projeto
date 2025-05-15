@@ -37,4 +37,12 @@ public class VarSimbolo {
     public String getName() {
         return name;
     }
+    public String toString() {
+        return "VarSimbolo{" +
+                "tipo=" + tipo +
+                ", index=" + index +
+                ", scope=" + scope +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

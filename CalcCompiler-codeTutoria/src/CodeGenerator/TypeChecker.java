@@ -1,5 +1,6 @@
 package CodeGenerator;
 
+import TabelaSimbolos.FuncaoSimbolo;
 import TabelaSimbolos.*;
 import Tuga.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -11,7 +12,6 @@ import java.util.*;
 
 public class TypeChecker extends TugaBaseVisitor<Void> {
     TabelaSimbolos tabelaSimbolos;
-
     private final Map<ParseTree, Tipo> types = new HashMap<>();
     private int typeErrorCount = 0;
     private int addr = 0;
@@ -21,6 +21,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public TypeChecker(TabelaSimbolos tabelaSimbolos, ParseTreeProperty<Enquadramento> scopes) {
         this.tabelaSimbolos = tabelaSimbolos;
         this.scopes = scopes;
+
 
     }
 
@@ -43,12 +44,16 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public Void visitProg(TugaParser.ProgContext ctx) {
         //1.º PASSO - variáveis globais
 
-        for (var decl : ctx.varDeclaration())
-            visit(decl);
+        for (TugaParser.VarDeclarationContext decl : ctx.varDeclaration()) {
 
+            visit(decl);
+        }
         // 2.º PASSO - visitar corpo de cada função
-        for (var funcDecl : ctx.functionDecl())
+        for (var funcDecl : ctx.functionDecl()) {
+
             visit(funcDecl);
+        }
+        System.out.printf(tabelaSimbolos.toString());
         // 3.º PASSO - garantir existência de principal()
         if (!tabelaSimbolos.existeFunc("principal")) {
             System.out.printf("erro na linha %d: falta funcao principal()%n", ctx.start.getLine());
@@ -61,6 +66,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
     public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
         // Recupera o escopo atual através do ctx
         Enquadramento currentScope = scopes.get(ctx);
+        System.out.println("Escopo atual: " + currentScope.getCurrentScope());
 
         Tipo tipo = Tipo.INT;  // Tipo padrão
         if (ctx.TYPE() != null) {
@@ -70,12 +76,17 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         // Verificar se a variável já foi declarada no escopo atual
         for (TerminalNode id : ctx.ID()) {
             String nome = id.getText();
+            if (!tabelaSimbolos.existeVar(nome)) {
+                tabelaSimbolos.putVariavel(nome, tipo, addr++, currentScope.getCurrentScope());
+            }
+
             if (currentScope.contains(nome)) {
                 // Lidar com erro se a variável já existir no escopo
                 System.err.printf("Erro na linha %d: variável '%s' já declarada no escopo atual.%n", ctx.start.getLine(), nome);
                 typeErrorCount++;
             } else {
                 currentScope.put(nome, tipo);
+
             }
         }
         return null;
@@ -131,17 +142,17 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
                 tiposArgs.add(t);
             }
         }
-        int escopoFunc;
-        if (scopes.get(ctx) != null){
-            escopoFunc= scopes.get(ctx).getCurrentScope();
-        } else {
-            escopoFunc = 0;
-        }
+        int escopoFunc = 0;
+        Enquadramento currentScope = scopes.get(ctx);
+
+        escopoFunc = currentScope.getCurrentScope();
+
 
         if (tabelaSimbolos.existeFunc(nome)) {
             System.err.printf("Erro na linha %d: função '%s' já declarada no escopo atual.%n", ctx.start.getLine(), nome);
             typeErrorCount++;
         } else {
+            //System.out.println("Adicionando função: " + nome + " no escopo " + escopoFunc);
             tabelaSimbolos.putFuncao(nome, tipoRet, tiposArgs, escopoFunc);
         }
         return null;
@@ -156,7 +167,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         // Recupera o escopo atual através do ctx
         Enquadramento currentScope = scopes.get(ctx);
 
-        String nomeFunc = ctx.ID().getText();
+        String nomeFunc = ctx.getText();
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(nomeFunc);
         // Verificar se a função está declarada
         if (funcao == null) {
@@ -165,21 +176,21 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
         }
 
         // Verificar se os tipos dos parâmetros correspondem à declaração da função
-        int numParametros = ctx.exprList().expr().size();
+        int numParametros = ctx.chamadaFuncao().exprList().expr().size();
         System.out.println("Numero de parametros: " + numParametros); //debugging
         if (numParametros != funcao.getArgumentos().size()) {
-            System.out.printf("erro na linha %d: '%s' requer %d argumentos" , ctx.start.getLine(),nomeFunc, numParametros);
+            System.out.printf("erro na linha %d: '%s' requer %d argumentos", ctx.start.getLine(), nomeFunc, numParametros);
             typeErrorCount++;
         }
 
         for (int i = 0; i < numParametros; i++) {
             Tipo tipoEsperado = funcao.getArgumentos().get(i).getTipo();
-            Tipo tipoReal = getTipo(ctx.exprList().expr(i));
-            String nomeArg = ctx.exprList().expr(i).getText();
+            Tipo tipoReal = getTipo(ctx.chamadaFuncao().exprList().expr(i));
+            String nomeArg = ctx.chamadaFuncao().exprList().expr(i).getText();
 
             // Verificar se o tipo do argumento é compatível com o esperado
             if (tipoEsperado != tipoReal) {
-                System.out.printf("erro na linha %d: '%s'devia ser do tipo %s .%n", ctx.start.getLine(), nomeArg,tipoEsperado);
+                System.out.printf("erro na linha %d: '%s'devia ser do tipo %s .%n", ctx.start.getLine(), nomeArg, tipoEsperado);
                 typeErrorCount++;
             }
         }
@@ -216,21 +227,18 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
                 // Verifica se o tipo da expressão retornada é compatível com o tipo de retorno da função
                 if (tipoRetornoEsperado != tipoExprRetornada) {
                     // Verificação de compatibilidade (sem conversão de tipos nesta fase)
-                    System.out.printf("Erro na linha %d: tipo de retorno incompatível. Esperado %s, encontrado %s.%n",
-                            ctx.start.getLine(), getTipoTexto(tipoRetornoEsperado), getTipoTexto(tipoExprRetornada));
+                    System.out.printf("Erro na linha %d: tipo de retorno incompatível. Esperado %s, encontrado %s.%n", ctx.start.getLine(), getTipoTexto(tipoRetornoEsperado), getTipoTexto(tipoExprRetornada));
                     typeErrorCount++;
                 }
             } else {
                 // Caso a função espere um retorno, mas a expressão não foi fornecida
-                System.out.printf("Erro na linha %d: função '%s' espera um valor de retorno do tipo %s, mas nenhum valor foi retornado.%n",
-                        ctx.start.getLine(), funcaoAtual.getNome(), getTipoTexto(tipoRetornoEsperado));
+                System.out.printf("Erro na linha %d: função '%s' espera um valor de retorno do tipo %s, mas nenhum valor foi retornado.%n", ctx.start.getLine(), funcaoAtual.getNome(), getTipoTexto(tipoRetornoEsperado));
                 typeErrorCount++;
             }
         }
 
         return null;
     }
-
 
 
     @Override

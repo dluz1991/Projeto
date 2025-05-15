@@ -89,12 +89,12 @@ public interface TugaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitRetorna(TugaParser.RetornaContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code ChamadaFuncao}
+	 * Visit a parse tree produced by the {@code ChamadaFuncaoStat}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	T visitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code Vazia}
 	 * labeled alternative in {@link TugaParser#stat}.
@@ -193,6 +193,12 @@ public interface TugaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitReal(TugaParser.RealContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TugaParser#chamadaFuncao}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link TugaParser#exprList}.
 	 * @param ctx the parse tree

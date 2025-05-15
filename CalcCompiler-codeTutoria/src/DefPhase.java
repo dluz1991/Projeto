@@ -41,74 +41,86 @@ public class DefPhase extends TugaBaseListener {
         // Verifica se a função principal "main" foi declarada
         scopeStack.pop();
     }
-
+    @Override
+    public void exitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
+        currentScope = scopeStack.pop();
+        funcaoAtual = null;
+    }
     @Override
     public void enterFunctionDecl(TugaParser.FunctionDeclContext ctx) {
+        // Cria novo escopo da função
+        Enquadramento funcScope = new Enquadramento(currentScope, ++lastScope);
+        scopeStack.push(currentScope); // guarda escopo anterior
+        currentScope = funcScope;
+        saveScope(ctx, currentScope); // associa função ao novo escopo
+
+        // Extrai nome e tipo
         String nome = ctx.ID().getText();
-        String tipoString = ctx.TYPE() != null ? ctx.TYPE().getText() : "void";  // Verifica se o tipo é nulo
+        String tipoString = ctx.TYPE() != null ? ctx.TYPE().getText() : "void";
         Tipo tipo = TypeChecker.getTipo(tipoString);
 
+        // Processa parâmetros
         List<VarSimbolo> args = new ArrayList<>();
-        if (ctx.formalParameters() != null) {  // Verifica se formalParameters() é não nulo
+        if (ctx.formalParameters() != null) {
             for (TugaParser.FormalParameterContext param : ctx.formalParameters().formalParameter()) {
                 String paramNome = param.ID().getText();
                 Tipo paramTipo = TypeChecker.getTipo(param.TYPE().getText());
-                currentScope.put(paramNome, paramTipo);
+                currentScope.put(paramNome, paramTipo); // INSERE no escopo da função
                 args.add(new VarSimbolo(paramNome, paramTipo));
-                if (print) {
-                    System.out.println("Parâmetro: " + paramTipo + " " + paramNome + " no escopo " + currentScope.getCurrentScope());
-                }
             }
         }
 
-        FuncaoSimbolo funcao = new FuncaoSimbolo(nome, tipo, args, currentScope.getCurrentScope());
-        funcaoAtual = funcao;
+        funcaoAtual = new FuncaoSimbolo(nome, tipo, args, currentScope.getCurrentScope());
 
-        // Se necessário, print para debug
         if (print) {
-            String type=ctx.TYPE() != null ? ctx.TYPE().getText() : "void";
-            System.out.println("enterFunction " + type + " " + funcao.getNome() + "(...) >> " + currentScope);
+            System.out.println("Função " + nome + " no escopo " + currentScope.getCurrentScope());
             currentScope.print();
         }
     }
 
+
+
     void saveScope(ParserRuleContext ctx, Enquadramento s) {
+        //System.out.println("Salvando escopo: " + s.getCurrentScope() + " para " + ctx.getText());
         scopes.put(ctx, s);
     }
 
     @Override
     public void enterBloco(TugaParser.BlocoContext ctx) {
-        currentScope = new Enquadramento(currentScope, ++lastScope);
-        saveScope(ctx, currentScope);
-        scopeStack.push(currentScope);
-
-        // Adiciona as variáveis da função no escopo
-        if (funcaoAtual != null) {
-            currentScope.put(funcaoAtual.getNome(), funcaoAtual.getTipoRetorno());
-            for (var arg : funcaoAtual.getArgumentos()) {
-                currentScope.put(arg.getName(), arg.getTipo());
-            }
+        if (ctx.getParent() instanceof TugaParser.FunctionDeclContext) {
+            // Se o bloco é parte de uma função, não cria um novo escopo
+            return;
         }
+        currentScope = new Enquadramento(currentScope, ++lastScope);
+        scopeStack.push(currentScope);
+        saveScope(ctx, currentScope);
 
         if (print) {
             System.out.println("Entrando no escopo: " + currentScope.getCurrentScope());
         }
     }
 
+
     @Override
     public void exitBloco(TugaParser.BlocoContext ctx) {
+        if (ctx.getParent() instanceof TugaParser.FunctionDeclContext) {
+            // Se o bloco é parte de uma função, não cria um novo escopo
+            return;
+        }
         scopeStack.pop();
         currentScope = scopeStack.peek();
+
         if (print) {
             System.out.println("Saindo do escopo: " + currentScope.getCurrentScope());
         }
     }
 
+
     @Override
     public void enterVarDeclaration(TugaParser.VarDeclarationContext ctx) {
         String tipoString = ctx.TYPE().getText();
         Tipo tipo = TypeChecker.getTipo(tipoString);
-
+        saveScope(ctx, currentScope);
         for (var id : ctx.ID()) {
             String nome = id.getText();
             // Verifica se já existe uma variável com o mesmo nome no escopo
@@ -125,5 +137,6 @@ public class DefPhase extends TugaBaseListener {
     public ParseTreeProperty<Enquadramento> getScopes() {
         return scopes;
     }
+
 
 }

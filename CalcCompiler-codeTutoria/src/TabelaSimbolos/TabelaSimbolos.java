@@ -57,4 +57,17 @@ public class TabelaSimbolos {
         FuncaoSimbolo f = getFuncao(nome);
         return f==null ? -1 : f.getScope();
     }
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tabela de Símbolos:\n");
+        sb.append("Variáveis:\n");
+        for (VarSimbolo v : vars.values()) {
+            sb.append(v).append("\n");
+        }
+        sb.append("Funções:\n");
+        for (FuncaoSimbolo f : funs.values()) {
+            sb.append(f).append("\n");
+        }
+        return sb.toString();
+    }
 }

@@ -35,14 +35,20 @@ public class FuncaoSimbolo {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(tipoRetorno).append(" ").append(nome).append("(");
-        if (argumentos != null && !argumentos.isEmpty()) {
-            for (int i = 0; i < argumentos.size(); i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(argumentos.get(i).getTipo());
+        sb.append("Função: ").append(nome).append("\n");
+        sb.append("  Tipo de retorno: ").append(tipoRetorno).append("\n");
+        sb.append("  Scope: ").append(scope).append("\n");
+        sb.append("  Argumentos:");
+        if (argumentos == null || argumentos.isEmpty()) {
+            sb.append(" (nenhum)\n");
+        } else {
+            sb.append("\n");
+            for (VarSimbolo arg : argumentos) {
+                sb.append("    - ").append(arg.getName())
+                        .append(" : ").append(arg.getTipo()).append("\n");
             }
         }
-        sb.append(")");
         return sb.toString();
     }
+
 }

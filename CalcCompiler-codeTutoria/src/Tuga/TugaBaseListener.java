@@ -161,13 +161,13 @@ public class TugaBaseListener implements TugaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) { }
+	@Override public void enterChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) { }
+	@Override public void exitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -336,6 +336,18 @@ public class TugaBaseListener implements TugaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitReal(TugaParser.RealContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

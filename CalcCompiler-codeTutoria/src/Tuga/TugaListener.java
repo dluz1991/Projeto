@@ -140,17 +140,17 @@ public interface TugaListener extends ParseTreeListener {
 	 */
 	void exitRetorna(TugaParser.RetornaContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code ChamadaFuncao}
+	 * Enter a parse tree produced by the {@code ChamadaFuncaoStat}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
 	 */
-	void enterChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	void enterChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code ChamadaFuncao}
+	 * Exit a parse tree produced by the {@code ChamadaFuncaoStat}
 	 * labeled alternative in {@link TugaParser#stat}.
 	 * @param ctx the parse tree
 	 */
-	void exitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	void exitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Vazia}
 	 * labeled alternative in {@link TugaParser#stat}.
@@ -319,6 +319,16 @@ public interface TugaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitReal(TugaParser.RealContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TugaParser#chamadaFuncao}.
+	 * @param ctx the parse tree
+	 */
+	void enterChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TugaParser#chamadaFuncao}.
+	 * @param ctx the parse tree
+	 */
+	void exitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link TugaParser#exprList}.
 	 * @param ctx the parse tree
