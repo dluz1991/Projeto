@@ -29,7 +29,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         this.constantPool = constantPool;
         this.tabelaSimbolos = tabelaSimbolos;
         this.addr = typeChecker.getAddr();
-        System.out.println(tabelaSimbolos.toString());
+
     }
 
 
@@ -52,6 +52,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                 ((Instruction1Arg) code.get(callIdx)).setArg(loc);
             }
         }
+        debugInfo();
         return null;
     }
 
@@ -406,7 +407,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
-        System.out.println("visitAddSub");
         Tipo tipo = typeChecker.getTipo(ctx);
 
         if (tipo == Tipo.ERRO) {
@@ -447,7 +447,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
      */
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
-        System.out.println("visitMulDiv");
         Tipo tipo = typeChecker.getTipo(ctx);
         visitAndConvert(ctx.expr(0), tipo);
         visitAndConvert(ctx.expr(1), tipo);
@@ -719,5 +718,38 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return code;
     }
 
-    
+    public void debugInfo() {
+        System.out.println("\n=== DEBUG INFO ===");
+
+        // 1. Imprime funções e seus endereços
+        System.out.println("\nFunções declaradas:");
+        labelsFuncoes.forEach((name, addr) -> {
+            FuncaoSimbolo fs = tabelaSimbolos.getFuncao(name);
+            String returnType = (fs != null && fs.getTipoRetorno() != null) ?
+                    fs.getTipoRetorno().toString() : "?";
+            System.out.printf("%-15s @ %-4d (retorna: %s)\n", name, addr, returnType);
+        });
+
+        // 2. Imprime chamadas pendentes
+        System.out.println("\nChamadas pendentes:");
+        pendingCalls.forEach((fn, callIndices) -> {
+            System.out.printf("%s -> ", fn);
+            callIndices.forEach(idx -> {
+                Instruction1Arg call = (Instruction1Arg) code.get(idx);
+                System.out.printf("[%d: call %d] ", idx, call.getArg());
+            });
+            System.out.println();
+        });
+
+        // 3. Imprime constant pool
+        System.out.println("\nConstant pool:");
+        System.out.println("Tamanho: " + constantPool.size());
+
+        // 4. Imprime código gerado
+        System.out.println("\nCódigo gerado:");
+        for (int i = 0; i < code.size(); i++) {
+            System.out.printf("%4d: %s\n", i, code.get(i));
+        }
+        System.out.println("\n====================\n");
+    }
 }
