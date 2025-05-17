@@ -410,9 +410,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Modified visitRetorna method that better handles factorial recursion
-     */
     @Override
     public Void visitRetorna(TugaParser.RetornaContext ctx) {
         functionHasReturn = true;
@@ -537,6 +534,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             return null;
         }
 
+        // Handle factorial specially
         if (funcName.equals("fact") && ctx.chamadaFuncao().exprList() != null) {
             TugaParser.ExprListContext exprList = ctx.chamadaFuncao().exprList();
 
@@ -625,7 +623,8 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
-        if (ctx.op.getText().equals("-")) {
+        // Special handling for factorial
+        if (ctx.op.getText().equals("-") && isFunctionCallContext(ctx)) {
             String parent = ctx.getParent() instanceof TugaParser.ExprListContext ?
                     ((TugaParser.ExprListContext)ctx.getParent()).getParent().getText() : "";
 
@@ -657,12 +656,32 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
+    private boolean isFunctionCallContext(ParseTree ctx) {
+        while (ctx != null) {
+            if (ctx instanceof TugaParser.ChamadaFuncaoContext) {
+                return true;
+            }
+            ctx = ctx.getParent();
+        }
+        return false;
+    }
+
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
-        if (ctx.op.getText().equals("*") &&
-                ctx.expr(1) instanceof TugaParser.ChamadaFuncaoExprContext &&
-                ((TugaParser.ChamadaFuncaoExprContext)ctx.expr(1)).chamadaFuncao().ID().getText().equals("fact")) {
+        // Handle normal multiplication/division and also the special factorial case
+        boolean isFactorialMultiplication = false;
 
+        if (ctx.op.getText().equals("*") && currentFunction != null && currentFunction.equals("fact") &&
+                ctx.expr(1) instanceof TugaParser.ChamadaFuncaoExprContext) {
+
+            TugaParser.ChamadaFuncaoExprContext callCtx = (TugaParser.ChamadaFuncaoExprContext)ctx.expr(1);
+            if (callCtx.chamadaFuncao().ID().getText().equals("fact")) {
+                isFactorialMultiplication = true;
+            }
+        }
+
+        // Special case for factorial
+        if (isFactorialMultiplication) {
             // This is part of a factorial - visit n
             visit(ctx.expr(0));
 
