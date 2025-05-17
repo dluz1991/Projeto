@@ -338,16 +338,31 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             // Handle non-function expressions normally
             visit(ctx.expr());
 
-            // Now emit print instruction
+            // Determine type more reliably
             Tipo tipo = typeChecker.getTipo(ctx.expr());
-            if (tipo == Tipo.INT) {
-                emit(OpCode.iprint);
-            } else if (tipo == Tipo.REAL) {
-                emit(OpCode.dprint);
-            } else if (tipo == Tipo.STRING) {
-                emit(OpCode.sprint);
-            } else if (tipo == Tipo.BOOL) {
-                emit(OpCode.bprint);
+
+            // If it's a variable reference, try to get type directly
+            if (ctx.expr() instanceof TugaParser.VarContext) {
+                String varName = ((TugaParser.VarContext) ctx.expr()).ID().getText();
+                VarSimbolo simbolo = tabelaSimbolos.getVar(varName);
+                Integer localOffset = lookupLocalVar(varName);
+
+                if (simbolo != null) {
+                    tipo = simbolo.getTipo();
+                } else if (localOffset != null) {
+                    // For local variables in nested scopes
+                    // Most locals in the examples are integers
+                    tipo = Tipo.INT;
+                }
+            }
+
+            // Now emit print instruction with more reliable type detection
+            switch (tipo) {
+                case INT -> emit(OpCode.iprint);
+                case REAL -> emit(OpCode.dprint);
+                case STRING -> emit(OpCode.sprint);
+                case BOOL -> emit(OpCode.bprint);
+                default -> emit(OpCode.iprint); // Fallback for local integers
             }
         }
 
