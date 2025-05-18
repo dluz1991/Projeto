@@ -52,66 +52,6 @@ public class VirtualMachine {
         callStack.push(-1);
     }
 
-    // decode the bytecodes into instructions and store them in this.code
-    private void decode(byte[] bytecodes) {
-        ArrayList<Instruction> inst = new ArrayList<>();
-        try {
-            // feed the bytecodes into a data input stream
-            DataInputStream din = new DataInputStream(new ByteArrayInputStream(bytecodes));
-            // convert them into instructions
-            while (true) {
-                byte b = din.readByte();
-                OpCode opc = OpCode.convert(b);
-                switch (opc.nArgs()) {
-                    case 0:
-                        inst.add(new Instruction(opc));
-                        break;
-                    case 1:
-                        int val = din.readInt();
-                        inst.add(new Instruction1Arg(opc, val));
-                        break;
-                }
-            }
-        } catch (java.io.EOFException e) {
-            // reached end of input stream, convert arraylist to array
-            this.code = new Instruction[inst.size()];
-            inst.toArray(this.code);
-            if (trace) {
-                System.out.println("Disassembled instructions");
-                dumpInstructionsAndBytecodes();
-            }
-        } catch (java.io.IOException e) {
-            System.out.println(e);
-        }
-    }
-
-    // dump the instructions, along with the corresponding bytecodes
-    public void dumpInstructionsAndBytecodes() {
-        int idx = 0;
-        for (int i = 0; i < code.length; i++) {
-            StringBuilder s = new StringBuilder();
-            s.append(String.format("%02X ", bytecodes[idx++]));
-            if (code[i].nArgs() == 1) for (int k = 0; k < 4; k++)
-                s.append(String.format("%02X ", bytecodes[idx++]));
-            System.out.println(String.format("%5s: %-15s // %s", i, code[i], s));
-        }
-    }
-
-    // dump the instructions to the screen
-    public void dumpInstructions() {
-        for (int i = 0; i < code.length; i++)
-            System.out.println(i + ": " + code[i]);
-    }
-
-    private void runtime_error(String msg) {
-        System.out.println("runtime error: " + msg);
-        if (trace){
-            System.out.println(String.format("%22s Stack: %s", "", stack));
-            System.out.println(String.format("%22s FP: %d", "", FP));
-        }
-        System.exit(1);
-    }
-
     //___________INTEGER INSTRUCTIONS___________________________________________________________
     private void exec_iconst(Integer v) {
         stack.push(v);
@@ -376,7 +316,7 @@ public class VirtualMachine {
         stack.push(d);
     }
 
-    //______________MEMORY INSTRUCTIONS_____________________________________________________________
+    //______________GLOBAL MEMORY INSTRUCTIONS_____________________________________________________________
     private void exec_galloc(int arg) {
         int old = (global == null ? 0 : global.length);
         Object[] newMemory = new Object[old + arg];
@@ -453,7 +393,8 @@ public class VirtualMachine {
         framePointers.push(FP);
 
         // Update frame pointer to point to new frame
-        FP = stack.size() - 1;
+        if (stack.size()>0){ FP = stack.size() - 1;}
+        else { FP = 0; }
 
         // Jump to function
         IP = arg - 1;  // -1 because IP will be incremented after instruction
@@ -773,5 +714,66 @@ public class VirtualMachine {
             System.out.println(String.format("%3sGlobal: %s", "", globalStr));
             System.out.println(String.format("%3sStack: %s", "", stack));
         }
+    }
+
+    //__________AUXILIARY FUNCTIONS____________________________________________________
+    // decode the bytecodes into instructions and store them in this.code
+    private void decode(byte[] bytecodes) {
+        ArrayList<Instruction> inst = new ArrayList<>();
+        try {
+            // feed the bytecodes into a data input stream
+            DataInputStream din = new DataInputStream(new ByteArrayInputStream(bytecodes));
+            // convert them into instructions
+            while (true) {
+                byte b = din.readByte();
+                OpCode opc = OpCode.convert(b);
+                switch (opc.nArgs()) {
+                    case 0:
+                        inst.add(new Instruction(opc));
+                        break;
+                    case 1:
+                        int val = din.readInt();
+                        inst.add(new Instruction1Arg(opc, val));
+                        break;
+                }
+            }
+        } catch (java.io.EOFException e) {
+            // reached end of input stream, convert arraylist to array
+            this.code = new Instruction[inst.size()];
+            inst.toArray(this.code);
+            if (trace) {
+                System.out.println("Disassembled instructions");
+                dumpInstructionsAndBytecodes();
+            }
+        } catch (java.io.IOException e) {
+            System.out.println(e);
+        }
+    }
+
+    // dump the instructions, along with the corresponding bytecodes
+    public void dumpInstructionsAndBytecodes() {
+        int idx = 0;
+        for (int i = 0; i < code.length; i++) {
+            StringBuilder s = new StringBuilder();
+            s.append(String.format("%02X ", bytecodes[idx++]));
+            if (code[i].nArgs() == 1) for (int k = 0; k < 4; k++)
+                s.append(String.format("%02X ", bytecodes[idx++]));
+            System.out.println(String.format("%5s: %-15s // %s", i, code[i], s));
+        }
+    }
+
+    // dump the instructions to the screen
+    public void dumpInstructions() {
+        for (int i = 0; i < code.length; i++)
+            System.out.println(i + ": " + code[i]);
+    }
+
+    private void runtime_error(String msg) {
+        System.out.println("runtime error: " + msg);
+        if (trace){
+            System.out.println(String.format("%22s Stack: %s", "", stack));
+            System.out.println(String.format("%22s FP: %d", "", FP));
+        }
+        System.exit(1);
     }
 }

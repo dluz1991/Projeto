@@ -71,24 +71,24 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             visit(func);
         }
 
-        // Resolve the main function call
-        Integer mainAddress = functionAddresses.get("principal");
-        if (mainAddress == null) {
-            System.err.println("erro na linha " + (code.size() - 1) + ": falta a função principal()");
-        } else {
-            ((Instruction1Arg) code.get(callIdx)).setArg(mainAddress);
-        }
-
         // Resolve all function call sites
         for (CallSite site : callSites) {
             Integer address = functionAddresses.get(site.functionName);
             if (address != null) {
                 site.callInstruction.setArg(address);
             } else {
-                System.err.println("erro: função '" + site.functionName + "' não encontrada");
+                System.out.println("erro: função '" + site.functionName + "' não encontrada");
             }
         }
-        System.out.println(tabelaSimbolos.toString());
+
+        // Resolve the main function call
+        Integer mainAddress = functionAddresses.get("principal");
+        if (mainAddress == null) {
+            System.out.println("erro na linha " + (code.size() - 1) + ": falta a função principal()");
+        } else {
+            ((Instruction1Arg) code.get(callIdx)).setArg(mainAddress);
+        }
+        //System.out.println(tabelaSimbolos.toString());
         return null;
     }
 
@@ -128,55 +128,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
         if (funcao == null) return null;
 
-        // Special case for sqrsum function
-        if (funcName.equals("sqrsum")) {
-            if (debug) System.err.println("DEBUG: Special handling for sqrsum function");
-
-            functionHasReturn = false;
-            currentFunction = funcName;
-
-            // Push local scope for parameters
-            pushLocalScope();
-
-            // Register parameters
-            List<VarSimbolo> params = funcao.getArgumentos();
-            for (int i = 0; i < params.size(); i++) {
-                String pName = params.get(i).getName();
-                int offset = -(params.size() - i);
-                addLocalVar(pName, offset);
-            }
-
-            // For the sqrsum function, generate the bytecode directly to ensure correctness
-            emit(OpCode.lalloc, 1);        // Allocate space for local variable s
-
-            // Load parameters a and b (should be at -2 and -1)
-            emit(OpCode.lload, -2);        // First parameter (a)
-            emit(OpCode.lload, -1);        // Second parameter (b)
-
-            // Debug output to see actual parameter values
-            if (debug) System.err.println("DEBUG: Parameters should be a=3, b=2");
-
-            // Force addition operation
-            emit(OpCode.iadd);             // Add them together (3+2=5)
-
-            // Call sqr function with the result
-            emitFunctionCall("sqr");       // Call sqr(5)
-
-            // Store result in local variable s
-            emit(OpCode.lstore, 2);        // Store result in s
-
-            // Return s
-            emit(OpCode.lload, 2);         // Load s
-            emit(OpCode.retval, 2);        // Return s with 2 parameters
-
-            // Clean up
-            popLocalScope();
-            currentFunction = null;
-
-            return null;
-        }
-
-        // For other functions
         functionHasReturn = false;
         currentFunction = funcName;
         currentLocalCount = 0;
@@ -188,7 +139,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         if (ctx.formalParameters() != null) {
             List<VarSimbolo> args = funcao.getArgumentos();
             int paramCount = args.size();
-
             for (int i = 0; i < paramCount; i++) {
                 VarSimbolo param = args.get(i);
                 int offset = -(paramCount - i); // Parameters have negative offsets
@@ -222,6 +172,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         currentFunction = null;
         return null;
     }
+
 
     @Override
     public Void visitBloco(TugaParser.BlocoContext ctx) {
@@ -275,7 +226,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             if (var != null) {
                 emit(OpCode.gstore, var.getIndex());
             } else {
-                System.err.printf("erro: variável '%s' não declarada%n", varName);
+                System.out.printf("erro na linha %d: variável '%s' não declarada%n",ctx.start.getLine(), varName);
             }
         }
 
@@ -296,7 +247,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             if (var != null) {
                 emit(OpCode.gload, var.getIndex());
             } else {
-                System.err.printf("erro: variável '%s' não declarada%n", varName);
+                System.out.printf("erro na linha %d: variável '%s' não declarada%n",ctx.start.getLine(), varName);
             }
         }
 
@@ -312,7 +263,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
 
             if (funcao == null) {
-                System.err.printf("erro: função '%s' não declarada%n", funcName);
+                System.out.printf("erro na linha %d: função '%s' não declarada%n",ctx.start.getLine(), funcName);
                 return null;
             }
 
@@ -360,19 +311,19 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                     tipo = Tipo.INT;
                 }
             }
-
             // Now emit print instruction with more reliable type detection
             switch (tipo) {
                 case INT -> emit(OpCode.iprint);
                 case REAL -> emit(OpCode.dprint);
                 case STRING -> emit(OpCode.sprint);
                 case BOOL -> emit(OpCode.bprint);
-                default -> emit(OpCode.iprint); // Fallback for local integers
+                default -> emit(OpCode.sprint);
             }
         }
 
         return null;
     }
+
 
     @Override
     public Void visitEquanto(TugaParser.EquantoContext ctx) {
@@ -434,59 +385,38 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public Void visitRetorna(TugaParser.RetornaContext ctx) {
         functionHasReturn = true;
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(currentFunction);
-
         if (funcao == null) return null;
-
-        if (debug) System.err.println("DEBUG: Processing return in function: " + currentFunction);
-        if (ctx.expr() != null) {
-            if (debug) System.err.println("DEBUG: Return expression: " + ctx.expr().getText());
-            if (debug) System.err.println("DEBUG: Expression type: " + ctx.expr().getClass().getSimpleName());
-        }
 
         int paramCount = funcao.getArgumentos().size();
 
         if (funcao.getTipoRetorno() == Tipo.VOID) {
-            // For void functions
             if (currentLocalCount > 0) emit(OpCode.pop, currentLocalCount);
             emit(OpCode.ret, paramCount);
             return null;
         }
 
-        // Special handling for multiplication in return statements
-        if (ctx.expr() instanceof TugaParser.MulDivContext) {
-            TugaParser.MulDivContext mulDiv = (TugaParser.MulDivContext) ctx.expr();
-            if (mulDiv.op.getText().equals("*")) {
-                if (debug) System.err.println("DEBUG: Found multiplication in return statement");
-
-                // Handle left operand
-                visit(mulDiv.expr(0));
-                if (debug) System.err.println("DEBUG: Processed left operand: " + mulDiv.expr(0).getText());
-
-                // Handle right operand
-                visit(mulDiv.expr(1));
-                if (debug) System.err.println("DEBUG: Processed right operand: " + mulDiv.expr(1).getText());
-
-                // Always emit multiplication instruction
-                if (debug) System.err.println("DEBUG: Explicitly emitting IMULT instruction");
-                emit(OpCode.imult);
-
-                // Return with parameter count
-                emit(OpCode.retval, paramCount);
-                return null;
-            }
-        }
-
-        // Default handling for other expressions
         if (ctx.expr() != null) {
+            // Só visitar uma vez!
             visit(ctx.expr());
-
-            // Handle type conversion if needed
             Tipo exprType = typeChecker.getTipo(ctx.expr());
-            if (funcao.getTipoRetorno() == Tipo.REAL && exprType == Tipo.INT) {
-                emit(OpCode.itod);
+
+            // Se o tipo não bate, converte. NÃO visitar de novo!
+            if (funcao.getTipoRetorno() != exprType && exprType != Tipo.ERRO) {
+                // Só emitir conversão, nunca visitar outra vez!
+                // INT → REAL
+                if (funcao.getTipoRetorno() == Tipo.REAL && exprType == Tipo.INT) {
+                    emit(OpCode.itod);
+                }
+                // INT/REAL/BOOL → STRING
+                else if (funcao.getTipoRetorno() == Tipo.STRING) {
+                    switch (exprType) {
+                        case INT -> emit(OpCode.itos);
+                        case REAL -> emit(OpCode.dtos);
+                        case BOOL -> emit(OpCode.btos);
+                    }
+                }
             }
         } else {
-            // Default return value if no expression provided
             switch (funcao.getTipoRetorno()) {
                 case INT -> emit(OpCode.iconst, 0);
                 case REAL -> emit(OpCode.dconst, constantPool.addDouble(0.0));
@@ -494,10 +424,11 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                 case BOOL -> emit(OpCode.fconst);
             }
         }
-
         emit(OpCode.retval, paramCount);
         return null;
     }
+
+
 
     @Override
     public Void visitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) {
@@ -506,7 +437,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
 
         if (funcao == null) {
-            System.err.printf("erro: função '%s' não declarada%n", funcName);
+            System.out.printf("erro na linha %d: função '%s' não declarada%n",ctx.start.getLine(), funcName);
             return null;
         }
 
@@ -540,7 +471,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
 
         if (funcao == null) {
-            System.err.printf("erro: função '%s' não declarada%n", funcName);
+            System.out.printf("erro na linha %d: função '%s' não declarada%n", ctx.start.getLine(),funcName);
             return null;
         }
 
@@ -621,28 +552,29 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
-        // Visit both operands
         visit(ctx.expr(0));
         visit(ctx.expr(1));
-
-        // Always emit the appropriate operation instruction
         String op = ctx.op.getText();
-        if (debug) System.err.println("DEBUG: Processing AddSub expression: " + ctx.getText());
-        if (debug) System.err.println("DEBUG: Operator: " + op);
-
-        // Instead of using type information, just look at the operator
+        Tipo tipo1 = typeChecker.getTipo(ctx.expr(0));
+        Tipo tipo2 = typeChecker.getTipo(ctx.expr(1));
         if (op.equals("+")) {
-            // For now, just assume integer addition since we know that's what Example A needs
-            if (debug) System.err.println("DEBUG: Emitting IADD instruction (by default)");
-            emit(OpCode.iadd);
+            if (tipo1 == Tipo.STRING || tipo2 == Tipo.STRING) {
+                emit(OpCode.sconcat);
+            } else if (tipo1 == Tipo.REAL || tipo2 == Tipo.REAL) {
+                emit(OpCode.dadd);
+            } else if (tipo1 == Tipo.INT && tipo2 == Tipo.INT) {
+                emit(OpCode.iadd);
+            }
         } else {
-            // For subtraction, also default to integer
-            if (debug) System.err.println("DEBUG: Emitting ISUB instruction (by default)");
-            emit(OpCode.isub);
+            if (tipo1 == Tipo.REAL || tipo2 == Tipo.REAL) {
+                emit(OpCode.dsub);
+            } else {
+                emit(OpCode.isub);
+            }
         }
-
         return null;
     }
+
 
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
@@ -774,7 +706,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(functionName);
 
         if (funcao == null) {
-            System.err.printf("erro na linha %d: função '%s' não declarada%n", 0, functionName);
+            System.out.printf("erro na linha %d: função '%s' não declarada%n", 0, functionName);
             return;
         }
 
@@ -794,7 +726,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     private void visitAndConvert(ParseTree expr, Tipo targetType) {
         Tipo sourceType = typeChecker.getTipo(expr);
         visit(expr);
-
+        if (debug)System.out.println("DEBUG: Source type: " + sourceType + ", Target type: " + targetType);
         // Type conversion if needed
         if (sourceType != targetType) {
             if (targetType == Tipo.REAL && sourceType == Tipo.INT) {
@@ -819,21 +751,21 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     public void saveBytecodes(String filename) throws IOException {
         try (DataOutputStream dout = new DataOutputStream(new FileOutputStream(filename))) {
             // Write constant pool
-            dout.writeInt(constantPool.size());
-            for (int i = 0; i < constantPool.size(); i++) {
-                Object c = constantPool.get(i);
-                if (c instanceof Double) {
-                    dout.writeByte(0x01);
-                    dout.writeDouble((Double) c);
-                } else if (c instanceof String) {
-                    dout.writeByte(0x03);
-                    String s = (String) c;
-                    dout.writeInt(s.length());
-                    for (char ch : s.toCharArray()) {
-                        dout.writeChar(ch);
-                    }
-                }
-            }
+//            dout.writeInt(constantPool.size());
+//            for (int i = 0; i < constantPool.size(); i++) {
+//                Object c = constantPool.get(i);
+//                if (c instanceof Double) {
+//                    dout.writeByte(0x01);
+//                    dout.writeDouble((Double) c);
+//                } else if (c instanceof String) {
+//                    dout.writeByte(0x03);
+//                    String s = (String) c;
+//                    dout.writeInt(s.length());
+//                    for (char ch : s.toCharArray()) {
+//                        dout.writeChar(ch);
+//                    }
+//                }
+//            }
 
             // Write bytecode instructions
             for (Instruction inst : code) {
