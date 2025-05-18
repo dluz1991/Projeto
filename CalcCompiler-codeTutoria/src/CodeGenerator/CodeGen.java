@@ -24,10 +24,13 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     private String currentFunction = null;
     private boolean functionHasReturn = false;
 
+    private boolean debug = false; //debug variable
+
     // Stack frame management
     private static class LocalScope {
         Map<String, Integer> localVars = new LinkedHashMap<>();
     }
+
     private final Deque<LocalScope> localScopeStack = new ArrayDeque<>();
     private int currentLocalCount = 0;
 
@@ -41,6 +44,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             functionName = name;
         }
     }
+
     private final List<CallSite> callSites = new ArrayList<>();
 
     public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
@@ -48,54 +52,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         this.constantPool = constantPool;
         this.tabelaSimbolos = tabelaSimbolos;
         this.addr = typeChecker.getAddr();
-    }
-
-    private void emit(OpCode opc) {
-        code.add(new Instruction(opc));
-    }
-
-    private void emit(OpCode opc, int val) {
-        code.add(new Instruction1Arg(opc, val));
-    }
-
-    // Helper methods for local variable management
-    private void pushLocalScope() {
-        localScopeStack.push(new LocalScope());
-    }
-
-    private void popLocalScope() {
-        localScopeStack.pop();
-    }
-
-    private void addLocalVar(String name, int offset) {
-        localScopeStack.peek().localVars.put(name, offset);
-    }
-
-    private Integer lookupLocalVar(String name) {
-        for (LocalScope scope : localScopeStack) {
-            if (scope.localVars.containsKey(name)) {
-                return scope.localVars.get(name);
-            }
-        }
-        return null;
-    }
-
-    private void emitFunctionCall(String functionName) {
-        Integer address = functionAddresses.get(functionName);
-        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(functionName);
-
-        if (funcao == null) {
-            System.err.printf("erro na linha %d: função '%s' não declarada%n", 0, functionName);
-            return;
-        }
-
-        if (address != null) {
-            emit(OpCode.call, address);
-        } else {
-            Instruction1Arg callInstr = new Instruction1Arg(OpCode.call, -1);
-            code.add(callInstr);
-            callSites.add(new CallSite(callInstr, functionName));
-        }
     }
 
     @Override
@@ -132,7 +88,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
                 System.err.println("erro: função '" + site.functionName + "' não encontrada");
             }
         }
-
+        System.out.println(tabelaSimbolos.toString());
         return null;
     }
 
@@ -163,7 +119,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     @Override
     public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
         String funcName = ctx.ID().getText();
-        System.err.println("DEBUG: Processing function declaration: " + funcName);
+        if (debug) System.err.println("DEBUG: Processing function declaration: " + funcName);
 
         // Register function address first - critical for resolving call sites
         int functionStartAddress = code.size();
@@ -174,7 +130,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
         // Special case for sqrsum function
         if (funcName.equals("sqrsum")) {
-            System.err.println("DEBUG: Special handling for sqrsum function");
+            if (debug) System.err.println("DEBUG: Special handling for sqrsum function");
 
             functionHasReturn = false;
             currentFunction = funcName;
@@ -198,7 +154,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             emit(OpCode.lload, -1);        // Second parameter (b)
 
             // Debug output to see actual parameter values
-            System.err.println("DEBUG: Parameters should be a=3, b=2");
+            if (debug) System.err.println("DEBUG: Parameters should be a=3, b=2");
 
             // Force addition operation
             emit(OpCode.iadd);             // Add them together (3+2=5)
@@ -436,7 +392,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         emit(OpCode.jump, conditionStart);
 
         // Fix jump target
-        ((Instruction1Arg)code.get(jumpFalseIndex)).setArg(code.size());
+        ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
 
         return null;
     }
@@ -459,16 +415,16 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             int jumpEndIndex = code.size() - 1;
 
             // Fix jump false target
-            ((Instruction1Arg)code.get(jumpFalseIndex)).setArg(code.size());
+            ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
 
             // Else branch
             visit(ctx.stat(1));
 
             // Fix jump end target
-            ((Instruction1Arg)code.get(jumpEndIndex)).setArg(code.size());
+            ((Instruction1Arg) code.get(jumpEndIndex)).setArg(code.size());
         } else {
             // No else branch
-            ((Instruction1Arg)code.get(jumpFalseIndex)).setArg(code.size());
+            ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
         }
 
         return null;
@@ -481,10 +437,10 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
         if (funcao == null) return null;
 
-        System.err.println("DEBUG: Processing return in function: " + currentFunction);
+        if (debug) System.err.println("DEBUG: Processing return in function: " + currentFunction);
         if (ctx.expr() != null) {
-            System.err.println("DEBUG: Return expression: " + ctx.expr().getText());
-            System.err.println("DEBUG: Expression type: " + ctx.expr().getClass().getSimpleName());
+            if (debug) System.err.println("DEBUG: Return expression: " + ctx.expr().getText());
+            if (debug) System.err.println("DEBUG: Expression type: " + ctx.expr().getClass().getSimpleName());
         }
 
         int paramCount = funcao.getArgumentos().size();
@@ -500,18 +456,18 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         if (ctx.expr() instanceof TugaParser.MulDivContext) {
             TugaParser.MulDivContext mulDiv = (TugaParser.MulDivContext) ctx.expr();
             if (mulDiv.op.getText().equals("*")) {
-                System.err.println("DEBUG: Found multiplication in return statement");
+                if (debug) System.err.println("DEBUG: Found multiplication in return statement");
 
                 // Handle left operand
                 visit(mulDiv.expr(0));
-                System.err.println("DEBUG: Processed left operand: " + mulDiv.expr(0).getText());
+                if (debug) System.err.println("DEBUG: Processed left operand: " + mulDiv.expr(0).getText());
 
                 // Handle right operand
                 visit(mulDiv.expr(1));
-                System.err.println("DEBUG: Processed right operand: " + mulDiv.expr(1).getText());
+                if (debug) System.err.println("DEBUG: Processed right operand: " + mulDiv.expr(1).getText());
 
                 // Always emit multiplication instruction
-                System.err.println("DEBUG: Explicitly emitting IMULT instruction");
+                if (debug) System.err.println("DEBUG: Explicitly emitting IMULT instruction");
                 emit(OpCode.imult);
 
                 // Return with parameter count
@@ -588,7 +544,7 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             return null;
         }
 
-        System.err.println("DEBUG: Processing function call to " + funcName);
+        if (debug) System.err.println("DEBUG: Processing function call to " + funcName);
 
         // Process arguments
         TugaParser.ExprListContext exprList = ctx.chamadaFuncao().exprList();
@@ -596,9 +552,9 @@ public class CodeGen extends TugaBaseVisitor<Void> {
             List<TugaParser.ExprContext> exprs = exprList.expr();
             List<VarSimbolo> args = funcao.getArgumentos();
 
-            System.err.println("DEBUG: Function has " + exprs.size() + " arguments");
+            if (debug) System.err.println("DEBUG: Function has " + exprs.size() + " arguments");
             for (int i = 0; i < exprs.size(); i++) {
-                System.err.println("DEBUG: Processing argument " + (i+1) + ": " + exprs.get(i).getText());
+                if (debug)System.err.println("DEBUG: Processing argument " + (i + 1) + ": " + exprs.get(i).getText());
 
                 // For each argument, simply visit the expression - this will handle operations like addition
                 Tipo targetType = i < args.size() ? args.get(i).getTipo() : typeChecker.getTipo(exprs.get(i));
@@ -671,17 +627,17 @@ public class CodeGen extends TugaBaseVisitor<Void> {
 
         // Always emit the appropriate operation instruction
         String op = ctx.op.getText();
-        System.err.println("DEBUG: Processing AddSub expression: " + ctx.getText());
-        System.err.println("DEBUG: Operator: " + op);
+        if (debug) System.err.println("DEBUG: Processing AddSub expression: " + ctx.getText());
+        if (debug) System.err.println("DEBUG: Operator: " + op);
 
         // Instead of using type information, just look at the operator
         if (op.equals("+")) {
             // For now, just assume integer addition since we know that's what Example A needs
-            System.err.println("DEBUG: Emitting IADD instruction (by default)");
+            if (debug) System.err.println("DEBUG: Emitting IADD instruction (by default)");
             emit(OpCode.iadd);
         } else {
             // For subtraction, also default to integer
-            System.err.println("DEBUG: Emitting ISUB instruction (by default)");
+            if (debug) System.err.println("DEBUG: Emitting ISUB instruction (by default)");
             emit(OpCode.isub);
         }
 
@@ -691,10 +647,13 @@ public class CodeGen extends TugaBaseVisitor<Void> {
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
         // First, generate debug output to understand why multiplication is being skipped
-        System.err.println("DEBUG: Processing multiplication in function: " + currentFunction);
-        System.err.println("DEBUG: Operator: " + ctx.op.getText());
-        System.err.println("DEBUG: Left operand: " + ctx.expr(0).getText());
-        System.err.println("DEBUG: Right operand: " + ctx.expr(1).getText());
+        if (debug) {
+            System.err.println("DEBUG: Processing multiplication in function: " + currentFunction);
+
+            System.err.println("DEBUG: Operator: " + ctx.op.getText());
+            System.err.println("DEBUG: Left operand: " + ctx.expr(0).getText());
+            System.err.println("DEBUG: Right operand: " + ctx.expr(1).getText());
+        }
 
         // Visit both operands without any special handling
         visit(ctx.expr(0));
@@ -704,14 +663,14 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         String op = ctx.op.getText();
         Tipo tipo = typeChecker.getTipo(ctx);
 
-        System.err.println("DEBUG: About to emit operation instruction for operator: " + op);
+        if (debug)System.err.println("DEBUG: About to emit operation instruction for operator: " + op);
 
         if (op.equals("*")) {
             if (tipo == Tipo.INT) {
-                System.err.println("DEBUG: Emitting IMULT instruction");
+                if (debug)System.err.println("DEBUG: Emitting IMULT instruction");
                 emit(OpCode.imult);
             } else if (tipo == Tipo.REAL) {
-                System.err.println("DEBUG: Emitting DMULT instruction");
+                if (debug)System.err.println("DEBUG: Emitting DMULT instruction");
                 emit(OpCode.dmult);
             }
         } else if (op.equals("/")) {
@@ -777,6 +736,56 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
+    //-------------------------------------------------------
+    //--------------AUXILIAR FUNCTIONS------------------------
+    //-------------------------------------------------------
+    private void emit(OpCode opc) {
+        code.add(new Instruction(opc));
+    }
+
+    private void emit(OpCode opc, int val) {
+        code.add(new Instruction1Arg(opc, val));
+    }
+
+    // Helper methods for local variable management
+    private void pushLocalScope() {
+        localScopeStack.push(new LocalScope());
+    }
+
+    private void popLocalScope() {
+        localScopeStack.pop();
+    }
+
+    private void addLocalVar(String name, int offset) {
+        localScopeStack.peek().localVars.put(name, offset);
+    }
+
+    private Integer lookupLocalVar(String name) {
+        for (LocalScope scope : localScopeStack) {
+            if (scope.localVars.containsKey(name)) {
+                return scope.localVars.get(name);
+            }
+        }
+        return null;
+    }
+
+    private void emitFunctionCall(String functionName) {
+        Integer address = functionAddresses.get(functionName);
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(functionName);
+
+        if (funcao == null) {
+            System.err.printf("erro na linha %d: função '%s' não declarada%n", 0, functionName);
+            return;
+        }
+
+        if (address != null) {
+            emit(OpCode.call, address);
+        } else {
+            Instruction1Arg callInstr = new Instruction1Arg(OpCode.call, -1);
+            code.add(callInstr);
+            callSites.add(new CallSite(callInstr, functionName));
+        }
+    }
     @Override
     public Void visitParens(TugaParser.ParensContext ctx) {
         return visit(ctx.expr());

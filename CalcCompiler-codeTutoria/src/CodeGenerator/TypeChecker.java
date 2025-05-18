@@ -35,7 +35,7 @@ public class TypeChecker extends TugaBaseVisitor<Void> {
             case STRING ->
                     (t2 == Tipo.STRING || t2 == Tipo.INT || t2 == Tipo.REAL || t2 == Tipo.BOOL) ? Tipo.STRING : Tipo.ERRO;
             case BOOL -> (t2 == Tipo.STRING) ? Tipo.STRING : (t2 == Tipo.BOOL) ? Tipo.BOOL : Tipo.ERRO;
-            default -> Tipo.ERRO;
+            default -> Tipo.VOID;
         };
     }
 
