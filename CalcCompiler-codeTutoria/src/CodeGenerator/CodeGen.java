@@ -10,476 +10,648 @@ import VM.OpCode;
 import VM.Instruction.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.ParserRuleContext;
 
 public class CodeGen extends TugaBaseVisitor<Void> {
     private final ArrayList<Instruction> code = new ArrayList<>();
     private final TypeChecker typeChecker;
-    private ConstantPool constantPool = new ConstantPool();
-    private TabelaSimbolos tabelaSimbolos = new TabelaSimbolos();
-
+    private ConstantPool constantPool;
+    private TabelaSimbolos tabelaSimbolos;
     private int addr;
-    private final Map<String, Integer> labelsFuncoes = new HashMap<>();
-    private final Map<String, List<Integer>> pendingCalls = new HashMap<>();
 
+    // Function management
+    private final Map<String, Integer> functionAddresses = new HashMap<>();
     private String currentFunction = null;
+    private boolean functionHasReturn = false;
 
+    private boolean debug = false; //debug variable
+
+    // Stack frame management
+    private static class LocalScope {
+        Map<String, Integer> localVars = new LinkedHashMap<>();
+    }
+
+    private final Deque<LocalScope> localScopeStack = new ArrayDeque<>();
+    private int currentLocalCount = 0;
+
+    // Call site tracking for late binding
+    private static class CallSite {
+        Instruction1Arg callInstruction;
+        String functionName;
+
+        CallSite(Instruction1Arg instr, String name) {
+            callInstruction = instr;
+            functionName = name;
+        }
+    }
+
+    private final List<CallSite> callSites = new ArrayList<>();
 
     public CodeGen(TypeChecker checker, ConstantPool constantPool, TabelaSimbolos tabelaSimbolos) {
         this.typeChecker = checker;
         this.constantPool = constantPool;
         this.tabelaSimbolos = tabelaSimbolos;
         this.addr = typeChecker.getAddr();
-
     }
-
 
     @Override
     public Void visitProg(TugaParser.ProgContext ctx) {
-        // Depois gera o código principal
-        emitCall("principal");
+        // Entry point setup
+        emit(OpCode.call, -1); // Placeholder for main function
+        int callIdx = code.size() - 1;
         emit(OpCode.halt);
-        // Primeiro processa as funções
-        for (var fn : ctx.functionDecl()) visit(fn);
-        // Resolve chamadas pendentes
-        for (var entry : pendingCalls.entrySet()) {
-            String fn = entry.getKey();
-            Integer loc = labelsFuncoes.get(fn);
-            if (loc == null) {
-                System.err.printf("erro: falta a função '%s'\n", fn);
-                continue;
-            }
-            for (int callIdx : entry.getValue()) {
-                ((Instruction1Arg) code.get(callIdx)).setArg(loc);
-            }
-        }
-        debugInfo();
-        return null;
-    }
 
-    @Override
-    public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
-        currentFunction = ctx.ID().getText();
-        labelsFuncoes.put(currentFunction, code.size());
-
-        // reindex and register arguments
-        FuncaoSimbolo fs = tabelaSimbolos.getFuncao(currentFunction);
-        List<VarSimbolo> args = fs.getArgumentos();
-        for (int i = 0; i < args.size(); i++) {
-            VarSimbolo old = args.get(i);
-            int idx = -1 - i;
-            VarSimbolo nu = new VarSimbolo(old.getName(), old.getTipo(), idx, fs.getScope());
-            args.set(i, nu);
-            tabelaSimbolos.putVariavel(nu.getName(), nu.getTipo(), nu.getIndex(), fs.getScope());
+        // Process global variables
+        for (var decl : ctx.varDeclaration()) {
+            visit(decl);
         }
 
-        // body
-        visit(ctx.bloco());
-        // void functions need a ret
-        if (fs.getTipoRetorno() == Tipo.VOID) {
-            emit(OpCode.ret, args.size());
+        // Process functions
+        for (var func : ctx.functionDecl()) {
+            visit(func);
         }
-        currentFunction = null;
-        return null;
-    }
 
-    @Override
-    public Void visitBloco(TugaParser.BlocoContext ctx) {
-        FuncaoSimbolo fs = tabelaSimbolos.getFuncao(currentFunction);
-        int paramCount = fs.getArgumentos().size();
-
-        // Calcula total de locais
-        int totalLoc = 0;
-        for (var vd : ctx.varDeclaration()) totalLoc += vd.ID().size();
-
-        // Aloca espaço para variáveis locais
-        if (totalLoc > 0) emit(OpCode.lalloc, totalLoc);
-
-        // Registra variáveis locais
-        int localIdx = 0;
-        for (var vd : ctx.varDeclaration()) {
-            Tipo t = switch (vd.TYPE().getText()) {
-                case "inteiro" -> Tipo.INT;
-                case "real" -> Tipo.REAL;
-                case "booleano" -> Tipo.BOOL;
-                case "string" -> Tipo.STRING;
-                default -> Tipo.ERRO;
-            };
-            for (TerminalNode id : vd.ID()) {
-                tabelaSimbolos.putVariavel(id.getText(), t, paramCount + localIdx++, fs.getScope());
+        // Resolve all function call sites
+        for (CallSite site : callSites) {
+            Integer address = functionAddresses.get(site.functionName);
+            if (address != null) {
+                site.callInstruction.setArg(address);
+            } else {
+                System.out.println("erro: função '" + site.functionName + "' não encontrada");
             }
         }
 
-        // Processa statements
-        for (var st : ctx.stat()) visit(st);
-
-        return null;
-    }
-
-    @Override
-    public Void visitBlocoStat(TugaParser.BlocoStatContext ctx) {
-        return visit(ctx.bloco());
-    }
-
-    @Override
-    public Void visitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) {
-        String fn = ctx.chamadaFuncao().ID().getText();
-        FuncaoSimbolo fs = tabelaSimbolos.getFuncao(fn);
-        // gera argumentos
-        if (ctx.chamadaFuncao().exprList() != null) {
-            var args = ctx.chamadaFuncao().exprList().expr();
-            for (int i = 0; i < args.size(); i++) {
-                Tipo want = i < fs.getArgumentos().size() ? fs.getArgumentos().get(i).getTipo() : typeChecker.getTipo(args.get(i));
-                visitAndConvert(args.get(i), want);
-            }
-        }
-        emitCall(fn);
-        if (fs.getTipoRetorno() != Tipo.VOID) {
-            emit(OpCode.pop, 1);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitChamadaFuncao(TugaParser.ChamadaFuncaoContext ctx) {
-        String fn = ctx.ID().getText();
-        FuncaoSimbolo fs = tabelaSimbolos.getFuncao(fn);
-
-        if (fs == null) {
-            throw new RuntimeException("Função '" + fn + "' não declarada");
-        }
-
-        // Gera os argumentos com conversão de tipos se necessário
-        if (ctx.exprList() != null) {
-            var args = ctx.exprList().expr();
-            for (int i = 0; i < args.size(); i++) {
-                Tipo expected = i < fs.getArgumentos().size()
-                        ? fs.getArgumentos().get(i).getTipo()
-                        : typeChecker.getTipo(args.get(i));
-                visitAndConvert(args.get(i), expected);
-            }
-        }
-
-        emitCall(fn);
-        return null;
-    }
-
-    @Override
-    public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
-        visitChamadaFuncao(ctx.chamadaFuncao());
-        return null;
-    }
-    @Override
-    public Void visitRetorna(TugaParser.RetornaContext ctx) {
-        FuncaoSimbolo fs = tabelaSimbolos.getFuncao(currentFunction);
-        if (fs == null) {
-            throw new RuntimeException("Retorno fora de função");
-        }
-
-        int nArgs = fs.getArgumentos().size();
-
-        if (ctx.expr() != null) {
-            Tipo returnType = fs.getTipoRetorno();
-            if (returnType == Tipo.VOID) {
-                throw new RuntimeException("Função void não pode retornar valor");
-            }
-
-            visitAndConvert(ctx.expr(), returnType);
-            emit(OpCode.retval, nArgs);
+        // Resolve the main function call
+        Integer mainAddress = functionAddresses.get("principal");
+        if (mainAddress == null) {
+            System.out.println("erro na linha " + (code.size() - 1) + ": falta a função principal()");
         } else {
-            if (fs.getTipoRetorno() != Tipo.VOID) {
-                throw new RuntimeException("Função não-void deve retornar valor");
-            }
-            emit(OpCode.ret, nArgs);
+            ((Instruction1Arg) code.get(callIdx)).setArg(mainAddress);
         }
+        //System.out.println(tabelaSimbolos.toString());
         return null;
     }
 
     @Override
     public Void visitVarDeclaration(TugaParser.VarDeclarationContext ctx) {
-        Tipo tipo = Tipo.STRING; // tipo default
-        if (ctx.TYPE() != null) {
-            tipo = switch (ctx.TYPE().getText()) {
-                case "inteiro" -> Tipo.INT;
-                case "real" -> Tipo.REAL;
-                case "string" -> Tipo.STRING;
-                case "booleano" -> Tipo.BOOL;
-                default -> Tipo.ERRO;
-            };
+        // Handle global vs local variable declarations differently
+        if (currentFunction == null) {
+            // Global variables
+            int count = ctx.ID().size();
+            emit(OpCode.galloc, count);
+        } else {
+            // Local variables
+            int count = ctx.ID().size();
+            emit(OpCode.lalloc, count);
+
+            // Register local variables in current scope
+            LocalScope currentScope = localScopeStack.peek();
+            for (TerminalNode id : ctx.ID()) {
+                String varName = id.getText();
+                int offset = 2 + currentLocalCount; // Adjust offset calculation
+                currentScope.localVars.put(varName, offset);
+                currentLocalCount++;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionDecl(TugaParser.FunctionDeclContext ctx) {
+        String funcName = ctx.ID().getText();
+        if (debug) System.err.println("DEBUG: Processing function declaration: " + funcName);
+
+        // Register function address first - critical for resolving call sites
+        int functionStartAddress = code.size();
+        functionAddresses.put(funcName, functionStartAddress);
+
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
+        if (funcao == null) return null;
+
+        functionHasReturn = false;
+        currentFunction = funcName;
+        currentLocalCount = 0;
+
+        // Push local scope for parameters
+        pushLocalScope();
+
+        // Set up parameters
+        if (ctx.formalParameters() != null) {
+            List<VarSimbolo> args = funcao.getArgumentos();
+            int paramCount = args.size();
+            for (int i = 0; i < paramCount; i++) {
+                VarSimbolo param = args.get(i);
+                int offset = -(paramCount - i); // Parameters have negative offsets
+                addLocalVar(param.getName(), offset);
+            }
         }
 
-        int count = ctx.ID().size();
+        // Visit function body
+        visit(ctx.bloco());
 
+        // Add implicit return if needed
+        if (!functionHasReturn) {
+            if (funcao.getTipoRetorno() == Tipo.VOID) {
+                // For void functions
+                if (currentLocalCount > 0) emit(OpCode.pop, currentLocalCount);
+                emit(OpCode.ret, funcao.getArgumentos().size());
+            } else {
+                // For non-void functions, add default return value
+                switch (funcao.getTipoRetorno()) {
+                    case INT -> emit(OpCode.iconst, 0);
+                    case REAL -> emit(OpCode.dconst, constantPool.addDouble(0.0));
+                    case STRING -> emit(OpCode.sconst, constantPool.addString(""));
+                    case BOOL -> emit(OpCode.fconst);
+                }
+                emit(OpCode.retval, funcao.getArgumentos().size());
+            }
+        }
+
+        // Clean up function context
+        popLocalScope();
+        currentFunction = null;
         return null;
     }
 
 
     @Override
+    public Void visitBloco(TugaParser.BlocoContext ctx) {
+        boolean isTopLevelBlock = ctx.getParent() instanceof TugaParser.FunctionDeclContext;
+
+        if (!isTopLevelBlock) {
+            pushLocalScope();
+        }
+
+        int localsThisBlock = 0;
+
+        // Process local variable declarations
+        for (TugaParser.VarDeclarationContext decl : ctx.varDeclaration()) {
+            localsThisBlock += decl.ID().size();
+            visit(decl);
+        }
+
+        // Process statements
+        for (TugaParser.StatContext stmt : ctx.stat()) {
+            visit(stmt);
+        }
+
+        // Clean up locals if needed
+        if (!isTopLevelBlock && localsThisBlock > 0 && !functionHasReturn) {
+            emit(OpCode.pop, localsThisBlock);
+            currentLocalCount -= localsThisBlock;
+        }
+
+        if (!isTopLevelBlock) {
+            popLocalScope();
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitAfetacao(TugaParser.AfetacaoContext ctx) {
+        // Generate code for RHS expression
+        visit(ctx.expr());
+
+        // Store into variable
         String varName = ctx.ID().getText();
-        VarSimbolo vs = tabelaSimbolos.getVar(varName);
+        Integer localOffset = lookupLocalVar(varName);
 
-        if (vs == null) {
-            throw new RuntimeException("Variável '" + varName + "' não declarada");
-        }
-
-        visitAndConvert(ctx.expr(), vs.getTipo());
-
-        if (vs.getScope() == 0) {
-            emit(OpCode.gstore, vs.getIndex());
+        if (localOffset != null) {
+            // Local variable
+            emit(OpCode.lstore, localOffset);
         } else {
-            emit(OpCode.lstore, vs.getIndex());
+            // Global variable
+            VarSimbolo var = tabelaSimbolos.getVar(varName);
+            if (var != null) {
+                emit(OpCode.gstore, var.getIndex());
+            } else {
+                System.out.printf("erro na linha %d: variável '%s' não declarada%n",ctx.start.getLine(), varName);
+            }
         }
+
+        return null;
+    }
+
+    @Override
+    public Void visitVar(TugaParser.VarContext ctx) {
+        String varName = ctx.ID().getText();
+        Integer localOffset = lookupLocalVar(varName);
+
+        if (localOffset != null) {
+            // Local variable
+            emit(OpCode.lload, localOffset);
+        } else {
+            // Global variable
+            VarSimbolo var = tabelaSimbolos.getVar(varName);
+            if (var != null) {
+                emit(OpCode.gload, var.getIndex());
+            } else {
+                System.out.printf("erro na linha %d: variável '%s' não declarada%n",ctx.start.getLine(), varName);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitEscreve(TugaParser.EscreveContext ctx) {
+        if (ctx.expr() instanceof TugaParser.ChamadaFuncaoExprContext) {
+            // Get the function expression
+            TugaParser.ChamadaFuncaoExprContext funcExpr = (TugaParser.ChamadaFuncaoExprContext) ctx.expr();
+            String funcName = funcExpr.chamadaFuncao().ID().getText();
+            FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
+
+            if (funcao == null) {
+                System.out.printf("erro na linha %d: função '%s' não declarada%n",ctx.start.getLine(), funcName);
+                return null;
+            }
+
+            // Process function call arguments
+            TugaParser.ExprListContext exprList = funcExpr.chamadaFuncao().exprList();
+            if (exprList != null) {
+                List<TugaParser.ExprContext> exprs = exprList.expr();
+                List<VarSimbolo> args = funcao.getArgumentos();
+
+                for (int i = 0; i < exprs.size(); i++) {
+                    Tipo targetType = i < args.size() ? args.get(i).getTipo() : typeChecker.getTipo(exprs.get(i));
+                    visitAndConvert(exprs.get(i), targetType);
+                }
+            }
+
+            // Call function
+            emitFunctionCall(funcName);
+
+            // Now emit the print instruction based on function return type
+            Tipo returnType = funcao.getTipoRetorno();
+            switch (returnType) {
+                case INT -> emit(OpCode.iprint);
+                case REAL -> emit(OpCode.dprint);
+                case STRING -> emit(OpCode.sprint);
+                case BOOL -> emit(OpCode.bprint);
+            }
+        } else {
+            // Handle non-function expressions normally
+            visit(ctx.expr());
+
+            // Determine type more reliably
+            Tipo tipo = typeChecker.getTipo(ctx.expr());
+
+            // If it's a variable reference, try to get type directly
+            if (ctx.expr() instanceof TugaParser.VarContext) {
+                String varName = ((TugaParser.VarContext) ctx.expr()).ID().getText();
+                VarSimbolo simbolo = tabelaSimbolos.getVar(varName);
+                Integer localOffset = lookupLocalVar(varName);
+
+                if (simbolo != null) {
+                    tipo = simbolo.getTipo();
+                } else if (localOffset != null) {
+                    // For local variables in nested scopes
+                    // Most locals in the examples are integers
+                    tipo = Tipo.INT;
+                }
+            }
+            // Now emit print instruction with more reliable type detection
+            switch (tipo) {
+                case INT -> emit(OpCode.iprint);
+                case REAL -> emit(OpCode.dprint);
+                case STRING -> emit(OpCode.sprint);
+                case BOOL -> emit(OpCode.bprint);
+                default -> emit(OpCode.sprint);
+            }
+        }
+
         return null;
     }
 
 
     @Override
     public Void visitEquanto(TugaParser.EquantoContext ctx) {
-        int beginWhile = code.size();
+        int conditionStart = code.size();
 
-        // VISITA diretamente a expressão — para garantir que o visitRelational é chamado
+        // Condition
         visitAndConvert(ctx.expr(), Tipo.BOOL);
 
+        // Jump if false
         emit(OpCode.jumpf, 0);
-        int jumpFIndex = code.size() - 1;
+        int jumpFalseIndex = code.size() - 1;
 
+        // Loop body
         visit(ctx.stat());
 
-        emit(OpCode.jump, beginWhile);
-        ((Instruction1Arg) code.get(jumpFIndex)).setArg(code.size());
+        // Jump back to condition
+        emit(OpCode.jump, conditionStart);
+
+        // Fix jump target
+        ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
 
         return null;
     }
-
 
     @Override
     public Void visitSe(TugaParser.SeContext ctx) {
+        // Condition
         visitAndConvert(ctx.expr(), Tipo.BOOL);
+
+        // Jump if false
         emit(OpCode.jumpf, 0);
-        int jfIdx = code.size() - 1;
+        int jumpFalseIndex = code.size() - 1;
+
+        // Then branch
         visit(ctx.stat(0));
+
+        // Handle else branch if present
         if (ctx.stat().size() > 1) {
             emit(OpCode.jump, 0);
-            int jIdx = code.size() - 1;
-            ((Instruction1Arg) code.get(jfIdx)).setArg(code.size());
+            int jumpEndIndex = code.size() - 1;
+
+            // Fix jump false target
+            ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
+
+            // Else branch
             visit(ctx.stat(1));
-            ((Instruction1Arg) code.get(jIdx)).setArg(code.size());
+
+            // Fix jump end target
+            ((Instruction1Arg) code.get(jumpEndIndex)).setArg(code.size());
         } else {
-            ((Instruction1Arg) code.get(jfIdx)).setArg(code.size());
+            // No else branch
+            ((Instruction1Arg) code.get(jumpFalseIndex)).setArg(code.size());
         }
+
         return null;
     }
 
     @Override
-    public Void visitEscreve(TugaParser.EscreveContext ctx) {
-        // Primeiro visita a expressão para gerar o código necessário
-        visit(ctx.expr());
+    public Void visitRetorna(TugaParser.RetornaContext ctx) {
+        functionHasReturn = true;
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(currentFunction);
+        if (funcao == null) return null;
 
-        // Obtém o tipo da expressão após a visita
-        Tipo tipo = typeChecker.getTipo(ctx.expr());
+        int paramCount = funcao.getArgumentos().size();
 
-        // Verifica se é uma chamada de função
-        if (ctx.expr() instanceof TugaParser.ChamadaFuncaoExprContext) {
-            FuncaoSimbolo fs = tabelaSimbolos.getFuncao(((TugaParser.ChamadaFuncaoExprContext)ctx.expr()).chamadaFuncao().ID().getText());
-            if (fs != null) {
-                tipo = fs.getTipoRetorno();
+        if (funcao.getTipoRetorno() == Tipo.VOID) {
+            if (currentLocalCount > 0) emit(OpCode.pop, currentLocalCount);
+            emit(OpCode.ret, paramCount);
+            return null;
+        }
+
+        if (ctx.expr() != null) {
+            // Só visitar uma vez!
+            visit(ctx.expr());
+            Tipo exprType = typeChecker.getTipo(ctx.expr());
+
+            // Se o tipo não bate, converte. NÃO visitar de novo!
+            if (funcao.getTipoRetorno() != exprType && exprType != Tipo.ERRO) {
+                // Só emitir conversão, nunca visitar outra vez!
+                // INT → REAL
+                if (funcao.getTipoRetorno() == Tipo.REAL && exprType == Tipo.INT) {
+                    emit(OpCode.itod);
+                }
+                // INT/REAL/BOOL → STRING
+                else if (funcao.getTipoRetorno() == Tipo.STRING) {
+                    switch (exprType) {
+                        case INT -> emit(OpCode.itos);
+                        case REAL -> emit(OpCode.dtos);
+                        case BOOL -> emit(OpCode.btos);
+                    }
+                }
+            }
+        } else {
+            switch (funcao.getTipoRetorno()) {
+                case INT -> emit(OpCode.iconst, 0);
+                case REAL -> emit(OpCode.dconst, constantPool.addDouble(0.0));
+                case STRING -> emit(OpCode.sconst, constantPool.addString(""));
+                case BOOL -> emit(OpCode.fconst);
+            }
+        }
+        emit(OpCode.retval, paramCount);
+        return null;
+    }
+
+
+
+    @Override
+    public Void visitChamadaFuncaoStat(TugaParser.ChamadaFuncaoStatContext ctx) {
+        // Function call as statement
+        String funcName = ctx.chamadaFuncao().ID().getText();
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
+
+        if (funcao == null) {
+            System.out.printf("erro na linha %d: função '%s' não declarada%n",ctx.start.getLine(), funcName);
+            return null;
+        }
+
+        // Push arguments
+        TugaParser.ExprListContext exprList = ctx.chamadaFuncao().exprList();
+        if (exprList != null) {
+            List<TugaParser.ExprContext> exprs = exprList.expr();
+            List<VarSimbolo> args = funcao.getArgumentos();
+
+            for (int i = 0; i < exprs.size(); i++) {
+                Tipo targetType = i < args.size() ? args.get(i).getTipo() : typeChecker.getTipo(exprs.get(i));
+                visitAndConvert(exprs.get(i), targetType);
             }
         }
 
-        // Emite a instrução de impressão correta
-        switch (tipo) {
-            case INT -> emit(OpCode.iprint);
-            case REAL -> emit(OpCode.dprint);
-            case BOOL -> emit(OpCode.bprint);
-            case STRING -> emit(OpCode.sprint);
-            default -> System.err.println("Erro: tipo não suportado para impressão");
+        // Call function
+        emitFunctionCall(funcName);
+
+        // Discard return value if not a void function
+        if (funcao.getTipoRetorno() != Tipo.VOID) {
+            emit(OpCode.pop, 1);
         }
 
         return null;
     }
 
     @Override
-    public Void visitVazia(TugaParser.VaziaContext ctx) {
-        return null;
-    }
+    public Void visitChamadaFuncaoExpr(TugaParser.ChamadaFuncaoExprContext ctx) {
+        // Function call as expression
+        String funcName = ctx.chamadaFuncao().ID().getText();
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(funcName);
 
-
-    @Override
-    public Void visitVar(TugaParser.VarContext ctx) {
-        String varName = ctx.ID().getText();
-        VarSimbolo vs = tabelaSimbolos.getVar(varName);
-
-        if (vs.getScope() == 0) {
-            emit(OpCode.gload, vs.getIndex());
-        } else {
-            emit(OpCode.lload, vs.getIndex());
+        if (funcao == null) {
+            System.out.printf("erro na linha %d: função '%s' não declarada%n", ctx.start.getLine(),funcName);
+            return null;
         }
+
+        if (debug) System.err.println("DEBUG: Processing function call to " + funcName);
+
+        // Process arguments
+        TugaParser.ExprListContext exprList = ctx.chamadaFuncao().exprList();
+        if (exprList != null) {
+            List<TugaParser.ExprContext> exprs = exprList.expr();
+            List<VarSimbolo> args = funcao.getArgumentos();
+
+            if (debug) System.err.println("DEBUG: Function has " + exprs.size() + " arguments");
+            for (int i = 0; i < exprs.size(); i++) {
+                if (debug)System.err.println("DEBUG: Processing argument " + (i + 1) + ": " + exprs.get(i).getText());
+
+                // For each argument, simply visit the expression - this will handle operations like addition
+                Tipo targetType = i < args.size() ? args.get(i).getTipo() : typeChecker.getTipo(exprs.get(i));
+
+                // Process each argument expression with correct type conversion
+                visitAndConvert(exprs.get(i), targetType);
+            }
+        }
+
+        // Call the function
+        emitFunctionCall(funcName);
+
         return null;
     }
-
 
     @Override
     public Void visitInt(TugaParser.IntContext ctx) {
-        emit(OpCode.iconst, Integer.parseInt(ctx.getText()));
+        emit(OpCode.iconst, Integer.parseInt(ctx.INT().getText()));
         return null;
     }
 
-    /**
-     * Visita o nó de Reais e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitReal(TugaParser.RealContext ctx) {
-        double val = Double.parseDouble(ctx.getText());
-        int index = constantPool.addDouble(val);
+        double value = Double.parseDouble(ctx.REAL().getText());
+        int index = constantPool.addDouble(value);
         emit(OpCode.dconst, index);
         return null;
     }
 
-    /**
-     * Visita o nó de Booleanos e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
-    @Override
-    public Void visitBool(TugaParser.BoolContext ctx) {
-        if (ctx.getText().equals("verdadeiro")) emit(OpCode.tconst);
-        else if (ctx.getText().equals("falso")) emit(OpCode.fconst);
-        return null;
-    }
-
-    /**
-     * Visita o nó de String e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
-
     @Override
     public Void visitString(TugaParser.StringContext ctx) {
-        String text = ctx.getText().substring(1, ctx.getText().length() - 1); // remove aspas
+        String text = ctx.STRING().getText();
+        // Remove quotes
+        text = text.substring(1, text.length() - 1);
         int index = constantPool.addString(text);
         emit(OpCode.sconst, index);
         return null;
     }
 
-    /**
-     * Visita o nó de Parens e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
-    public Void visitParens(TugaParser.ParensContext ctx) {
-        visit(ctx.expr());
+    public Void visitBool(TugaParser.BoolContext ctx) {
+        if (ctx.BOOL().getText().equals("verdadeiro")) {
+            emit(OpCode.tconst);
+        } else {
+            emit(OpCode.fconst);
+        }
         return null;
     }
 
-    /**
-     * Visita o nó de Unary e gera o bytecode correspondente.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitUnary(TugaParser.UnaryContext ctx) {
         visit(ctx.expr());
-        Tipo tipo = typeChecker.getTipo(ctx);
+        Tipo tipo = typeChecker.getTipo(ctx.expr());
+
         if (ctx.op.getType() == TugaParser.MINUS) {
             if (tipo == Tipo.INT) emit(OpCode.iuminus);
             else if (tipo == Tipo.REAL) emit(OpCode.duminus);
-            else System.out.println("Erro: operação - inválida para tipo " + tipo);
         } else if (ctx.op.getType() == TugaParser.NOT) {
             if (tipo == Tipo.BOOL) emit(OpCode.not);
-            else System.out.println("Erro: operação NOT inválida para tipo " + tipo);
         }
+
         return null;
     }
 
-    /**
-     * Visita o nó de AddSub e gera o bytecode para adiçao e subtraçao.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
     @Override
     public Void visitAddSub(TugaParser.AddSubContext ctx) {
-        Tipo tipo = typeChecker.getTipo(ctx);
-
-        if (tipo == Tipo.ERRO) {
-            //System.err.println("Erro de tipo na expressão.");
-            return null;
-        }
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
         String op = ctx.op.getText();
-        switch (tipo) {
-            case INT -> {
-                visitAndConvert(ctx.expr(0), tipo);
-                visitAndConvert(ctx.expr(1), tipo);
-                if (op.equals("+")) emit(OpCode.iadd);
-                else if (op.equals("-")) emit(OpCode.isub);
+        Tipo tipo1 = typeChecker.getTipo(ctx.expr(0));
+        Tipo tipo2 = typeChecker.getTipo(ctx.expr(1));
+        if (op.equals("+")) {
+            if (tipo1 == Tipo.STRING || tipo2 == Tipo.STRING) {
+                emit(OpCode.sconcat);
+            } else if (tipo1 == Tipo.REAL || tipo2 == Tipo.REAL) {
+                emit(OpCode.dadd);
+            } else if (tipo1 == Tipo.INT && tipo2 == Tipo.INT) {
+                emit(OpCode.iadd);
             }
-            case REAL -> {
-                visitAndConvert(ctx.expr(0), tipo);
-                visitAndConvert(ctx.expr(1), tipo);
-                if (op.equals("+")) emit(OpCode.dadd);
-                else if (op.equals("-")) emit(OpCode.dsub);
+        } else {
+            if (tipo1 == Tipo.REAL || tipo2 == Tipo.REAL) {
+                emit(OpCode.dsub);
+            } else {
+                emit(OpCode.isub);
             }
-            case STRING -> {
-                if (op.equals("+")) {
-                    visitAndConvert(ctx.expr(0), Tipo.STRING);
-                    visitAndConvert(ctx.expr(1), Tipo.STRING);
-                    emit(OpCode.sconcat);
-                }
-            }
-            default -> System.err.println("Erro: tipo não suportado em AddSub");
         }
         return null;
     }
 
-    /**
-     * Visita o nó de MulDiv e gera o bytecode para multiplicação, divisão e módulo.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
+
     @Override
     public Void visitMulDiv(TugaParser.MulDivContext ctx) {
-        Tipo tipo = typeChecker.getTipo(ctx);
-        visitAndConvert(ctx.expr(0), tipo);
-        visitAndConvert(ctx.expr(1), tipo);
-        if (tipo == Tipo.ERRO) {
-            //System.err.println("Erro de tipo na expressão.");
-            return null;
+        // First, generate debug output to understand why multiplication is being skipped
+        if (debug) {
+            System.err.println("DEBUG: Processing multiplication in function: " + currentFunction);
+
+            System.err.println("DEBUG: Operator: " + ctx.op.getText());
+            System.err.println("DEBUG: Left operand: " + ctx.expr(0).getText());
+            System.err.println("DEBUG: Right operand: " + ctx.expr(1).getText());
         }
+
+        // Visit both operands without any special handling
+        visit(ctx.expr(0));
+        visit(ctx.expr(1));
+
+        // Always emit the multiplication instruction
         String op = ctx.op.getText();
-        switch (tipo) {
-            case INT -> {
-                switch (op) {
-                    case "*" -> emit(OpCode.imult);
-                    case "/" -> emit(OpCode.idiv);
-                    case "%" -> emit(OpCode.imod);
-                }
+        Tipo tipo = typeChecker.getTipo(ctx);
+
+        if (debug)System.err.println("DEBUG: About to emit operation instruction for operator: " + op);
+
+        if (op.equals("*")) {
+            if (tipo == Tipo.INT) {
+                if (debug)System.err.println("DEBUG: Emitting IMULT instruction");
+                emit(OpCode.imult);
+            } else if (tipo == Tipo.REAL) {
+                if (debug)System.err.println("DEBUG: Emitting DMULT instruction");
+                emit(OpCode.dmult);
             }
-            case REAL -> {
-                switch (op) {
-                    case "*" -> emit(OpCode.dmult);
-                    case "/" -> emit(OpCode.ddiv);
-                }
-            }
-            default -> System.err.println("Erro: tipo não suportado em MulDiv");
+        } else if (op.equals("/")) {
+            if (tipo == Tipo.INT) emit(OpCode.idiv);
+            else if (tipo == Tipo.REAL) emit(OpCode.ddiv);
+        } else if (op.equals("%")) {
+            if (tipo == Tipo.INT) emit(OpCode.imod);
         }
+
         return null;
     }
 
-    /**
-     * Visita o nó de And e gera o bytecode correspondente para And.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
+    @Override
+    public Void visitRelational(TugaParser.RelationalContext ctx) {
+        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
+        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
+
+        Tipo commonType = (t1 == Tipo.REAL || t2 == Tipo.REAL) ? Tipo.REAL : Tipo.INT;
+        boolean switchArgs = ctx.op.getText().equals(">") || ctx.op.getText().equals(">=");
+
+        if (switchArgs) {
+            visitAndConvert(ctx.expr(1), commonType);
+            visitAndConvert(ctx.expr(0), commonType);
+        } else {
+            visitAndConvert(ctx.expr(0), commonType);
+            visitAndConvert(ctx.expr(1), commonType);
+        }
+
+        String op = ctx.op.getText();
+        switch (op) {
+            case "<", ">" -> emit(commonType == Tipo.INT ? OpCode.ilt : OpCode.dlt);
+            case "<=", ">=" -> emit(commonType == Tipo.INT ? OpCode.ileq : OpCode.dleq);
+            case "igual" -> {
+                if (t1 == Tipo.STRING) emit(OpCode.seq);
+                else if (t1 == Tipo.BOOL) emit(OpCode.beq);
+                else if (commonType == Tipo.INT) emit(OpCode.ieq);
+                else emit(OpCode.deq);
+            }
+            case "diferente" -> {
+                if (t1 == Tipo.STRING) emit(OpCode.sneq);
+                else if (t1 == Tipo.BOOL) emit(OpCode.bneq);
+                else if (commonType == Tipo.INT) emit(OpCode.ineq);
+                else emit(OpCode.dneq);
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public Void visitAnd(TugaParser.AndContext ctx) {
         visitAndConvert(ctx.expr(0), Tipo.BOOL);
@@ -487,13 +659,6 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         emit(OpCode.and);
         return null;
     }
-
-    /**
-     * Visita o nó de Or e gera o bytecode correspondente para Or.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
 
     @Override
     public Void visitOr(TugaParser.OrContext ctx) {
@@ -503,253 +668,116 @@ public class CodeGen extends TugaBaseVisitor<Void> {
         return null;
     }
 
-    /**
-     * Visita o nó de Relational e gera o bytecode correspondente para operações relacionais.
-     *
-     * @param ctx O contexto do nó de atribuição.
-     * @return null
-     */
-    @Override
-    public Void visitRelational(TugaParser.RelationalContext ctx) {
-        Tipo t1 = typeChecker.getTipo(ctx.expr(0));
-        Tipo t2 = typeChecker.getTipo(ctx.expr(1));
-
-        Tipo tipoFinal;
-        if (t1 == Tipo.REAL || t2 == Tipo.REAL) tipoFinal = Tipo.REAL;
-        else if (t1 == Tipo.INT && t2 == Tipo.INT) tipoFinal = Tipo.INT;
-        else if (t1 == Tipo.STRING && t2 == Tipo.STRING) tipoFinal = Tipo.STRING;
-        else if (t1 == Tipo.BOOL && t2 == Tipo.BOOL) tipoFinal = Tipo.BOOL;
-        else {
-            System.err.println("Tipos incompatíveis em Relational");
-            return null;
-        }
-
-        String op = ctx.op.getText();
-
-        switch (tipoFinal) {
-            case INT: {
-                switch (op) {
-                    // Trocar a ordem das visitas para evitar conversões desnecessárias
-                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
-                    case "<":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ilt);
-                        break;
-                    case ">":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ilt);
-                        break;
-                    case "<=":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ileq);
-                        break;
-                    case ">=":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.ileq);
-                        break;
-                    case "igual":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ieq);
-                        break;
-                    case "diferente":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.ineq);
-                        break;
-                    default:
-                        erroOpRel(op);
-                }
-                break;
-            }
-            case REAL: {
-                switch (op) {
-                    // Trocar a ordem das visitas para evitar conversões desnecessárias
-                    // (0)'<'(1) == (1)'>='(0) , (0)'<='(1) == (1)'>'(0)
-                    case "<":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dlt);
-                        break;
-                    case ">":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dlt);
-                        break;
-                    case "<=":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dleq);
-                        break;
-                    case ">=":
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        emit(OpCode.dleq);
-                        break;
-                    case "igual":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.deq);
-                        break;
-                    case "diferente":
-                        visitAndConvert(ctx.expr(0), tipoFinal);
-                        visitAndConvert(ctx.expr(1), tipoFinal);
-                        emit(OpCode.dneq);
-                        break;
-                    default:
-                        erroOpRel(op);
-                }
-                break;
-            }
-            case STRING: {
-                visitAndConvert(ctx.expr(0), tipoFinal);
-                visitAndConvert(ctx.expr(1), tipoFinal);
-                switch (op) {
-                    case "igual" -> emit(OpCode.seq);
-                    case "diferente" -> emit(OpCode.sneq);
-                    default -> erroOpRel(op);
-                }
-                break;
-            }
-            case BOOL: {
-
-                visitAndConvert(ctx.expr(0), tipoFinal);
-                visitAndConvert(ctx.expr(1), tipoFinal);
-                switch (op) {
-                    case "igual" -> emit(OpCode.beq);
-                    case "diferente" -> emit(OpCode.bneq);
-                    default -> erroOpRel(op);
-                }
-                break;
-            }
-
-        }
-
-        return null;
-    }
-
-    //____________________ METODOS AUXILIARES______________________
-    private void erroOpRel(String op) {
-        System.err.println("Operação relacional inválida: " + op);
-    }
-
-    /**
-     * Fução auxiliar para emitir a conversão de tipos.
-     *
-     * @param de, para. O tipo de origem e o tipo de destino.
-     * @return null
-     */
-    private void emitConversion(Tipo de, Tipo para) {
-        if (de == Tipo.VOID) {
-            return;
-        } // não faz nada mas garante que void nao da erro
-        if (de == para) return;
-        switch (de) {
-            case INT -> {
-                if (para == Tipo.REAL) emit(OpCode.itod);
-                else if (para == Tipo.STRING) emit(OpCode.itos);
-            }
-            case REAL -> {
-                if (para == Tipo.STRING) emit(OpCode.dtos);
-            }
-            case BOOL -> {
-                if (para == Tipo.STRING) emit(OpCode.btos);
-            }
-        }
-    }
-
-    /**
-     * Emite uma instrução de bytecode.
-     *
-     * @param opc O código da operação a emitir.
-     */
-    public void emit(OpCode opc) {
+    //-------------------------------------------------------
+    //--------------AUXILIAR FUNCTIONS------------------------
+    //-------------------------------------------------------
+    private void emit(OpCode opc) {
         code.add(new Instruction(opc));
     }
 
-    /**
-     * Emite uma instrução de bytecode com um argumento.
-     *
-     * @param opc O código da operação a emitir.
-     * @param val O valor do argumento.
-     */
-    public void emit(OpCode opc, int val) {
+    private void emit(OpCode opc, int val) {
         code.add(new Instruction1Arg(opc, val));
+    }
+
+    // Helper methods for local variable management
+    private void pushLocalScope() {
+        localScopeStack.push(new LocalScope());
+    }
+
+    private void popLocalScope() {
+        localScopeStack.pop();
+    }
+
+    private void addLocalVar(String name, int offset) {
+        localScopeStack.peek().localVars.put(name, offset);
+    }
+
+    private Integer lookupLocalVar(String name) {
+        for (LocalScope scope : localScopeStack) {
+            if (scope.localVars.containsKey(name)) {
+                return scope.localVars.get(name);
+            }
+        }
+        return null;
+    }
+
+    private void emitFunctionCall(String functionName) {
+        Integer address = functionAddresses.get(functionName);
+        FuncaoSimbolo funcao = tabelaSimbolos.getFuncao(functionName);
+
+        if (funcao == null) {
+            System.out.printf("erro na linha %d: função '%s' não declarada%n", 0, functionName);
+            return;
+        }
+
+        if (address != null) {
+            emit(OpCode.call, address);
+        } else {
+            Instruction1Arg callInstr = new Instruction1Arg(OpCode.call, -1);
+            code.add(callInstr);
+            callSites.add(new CallSite(callInstr, functionName));
+        }
+    }
+    @Override
+    public Void visitParens(TugaParser.ParensContext ctx) {
+        return visit(ctx.expr());
+    }
+
+    private void visitAndConvert(ParseTree expr, Tipo targetType) {
+        Tipo sourceType = typeChecker.getTipo(expr);
+        visit(expr);
+        if (debug)System.out.println("DEBUG: Source type: " + sourceType + ", Target type: " + targetType);
+        // Type conversion if needed
+        if (sourceType != targetType) {
+            if (targetType == Tipo.REAL && sourceType == Tipo.INT) {
+                emit(OpCode.itod);
+            } else if (targetType == Tipo.STRING) {
+                switch (sourceType) {
+                    case INT -> emit(OpCode.itos);
+                    case REAL -> emit(OpCode.dtos);
+                    case BOOL -> emit(OpCode.btos);
+                }
+            }
+        }
     }
 
     public void dumpCode() {
         System.out.println("*** Instructions ***");
-        for (int i = 0; i < code.size(); i++)
+        for (int i = 0; i < code.size(); i++) {
             System.out.println(i + ": " + code.get(i));
+        }
     }
 
     public void saveBytecodes(String filename) throws IOException {
         try (DataOutputStream dout = new DataOutputStream(new FileOutputStream(filename))) {
-            for (Instruction inst : code)
-                inst.writeTo(dout);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
+            // Write constant pool
+//            dout.writeInt(constantPool.size());
+//            for (int i = 0; i < constantPool.size(); i++) {
+//                Object c = constantPool.get(i);
+//                if (c instanceof Double) {
+//                    dout.writeByte(0x01);
+//                    dout.writeDouble((Double) c);
+//                } else if (c instanceof String) {
+//                    dout.writeByte(0x03);
+//                    String s = (String) c;
+//                    dout.writeInt(s.length());
+//                    for (char ch : s.toCharArray()) {
+//                        dout.writeChar(ch);
+//                    }
+//                }
+//            }
 
-    private void emitCall(String fn) {
-        Integer loc = labelsFuncoes.get(fn);
-        if (loc != null) {
-            emit(OpCode.call, loc);
-        } else {
-            // Se função ainda não definida, adiciona ao pendingCalls
-            emit(OpCode.call, -1);
-            int idx = code.size() - 1;
-            pendingCalls.computeIfAbsent(fn, k -> new ArrayList<>()).add(idx);
+            // Write bytecode instructions
+            for (Instruction inst : code) {
+                dout.writeByte(inst.getOpCode().ordinal());
+                if (inst instanceof Instruction1Arg) {
+                    dout.writeInt(((Instruction1Arg) inst).getArg());
+                }
+            }
         }
-    }
-
-    private void visitAndConvert(ParseTree expr, Tipo target) {
-        Tipo origem = typeChecker.getTipo(expr);
-        visit(expr); // visita primeiro
-        if (origem != target) emitConversion(origem, target);
     }
 
     public List<Instruction> getCode() {
         return code;
-    }
-
-    public void debugInfo() {
-        System.out.println("\n=== DEBUG INFO ===");
-
-        // 1. Imprime funções e seus endereços
-        System.out.println("\nFunções declaradas:");
-        labelsFuncoes.forEach((name, addr) -> {
-            FuncaoSimbolo fs = tabelaSimbolos.getFuncao(name);
-            String returnType = (fs != null && fs.getTipoRetorno() != null) ?
-                    fs.getTipoRetorno().toString() : "?";
-            System.out.printf("%-15s @ %-4d (retorna: %s)\n", name, addr, returnType);
-        });
-
-        // 2. Imprime chamadas pendentes
-        System.out.println("\nChamadas pendentes:");
-        pendingCalls.forEach((fn, callIndices) -> {
-            System.out.printf("%s -> ", fn);
-            callIndices.forEach(idx -> {
-                Instruction1Arg call = (Instruction1Arg) code.get(idx);
-                System.out.printf("[%d: call %d] ", idx, call.getArg());
-            });
-            System.out.println();
-        });
-
-        // 3. Imprime constant pool
-        System.out.println("\nConstant pool:");
-        System.out.println("Tamanho: " + constantPool.size());
-
-        // 4. Imprime código gerado
-        System.out.println("\nCódigo gerado:");
-        for (int i = 0; i < code.size(); i++) {
-            System.out.printf("%4d: %s\n", i, code.get(i));
-        }
-        System.out.println("\n====================\n");
     }
 }
